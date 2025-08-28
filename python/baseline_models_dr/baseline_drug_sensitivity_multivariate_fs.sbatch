@@ -1,0 +1,20 @@
+#!/bin/bash
+#SBATCH --job-name=CTRP_feature_selection
+#SBATCH -N 1
+#SBATCH -n 1
+#SBATCH --cpus-per-task=20
+#SBATCH --partition=serial
+#SBATCH --mem=100G
+#SBATCH -t 3-00:00:00
+#SBATCH --output=log/CTRP_feature_selection.%A.out
+#SBATCH --error=log/CTRP_feature_selection.%A.err
+#SBATCH --mail-user=teemu.rintala@uef.fi
+#SBATCH --mail-type=NONE
+
+source $HOME/tensorflow_23/bin/activate 
+python baseline_models_dr/baseline_drug_sensitivity_main.py \
+  --root_dir=/research/work/rintala/ctrp/ \
+  --identical_data \
+  --threads=20 \
+  --feature_selection_only \
+  --multivariate_fs
