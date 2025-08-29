@@ -8,28 +8,20 @@ from sae.data_utilities import complete_data_loader
 
 #%% TCGA and CCLE data
 '''
-Customized data loading parameters (Make sure they are the same as in PS)
+Customized data loading parameters. 
+Please make sure they match with settings used in the hyper-parameter search
 '''
 
 def get_tcga_brca_ctrp_ccle_full(
-        home = False, 
+        data_root = './', 
         standardize_early = False, 
         gene_preselection = False, 
         drug_response_maxscale = False, 
         tissue_classifier = False, 
         include_metas_labels = False):
-    if home:
-        patient_expression_root_dir = '/home/teemu/research_work/tcga/pan_cancer/data_full/'
-        cell_line_expression_root_dir = '/home/teemu/research_work/ccle/'
-        cell_line_drug_response_root_dir = '/home/teemu/research_work/ctrp/'
-    elif platform == 'linux':
-        patient_expression_root_dir = '/research/work/rintala/tcga/pan_cancer/data_full/'
-        cell_line_expression_root_dir = '/research/work/rintala/ccle/'
-        cell_line_drug_response_root_dir = '/research/work/rintala/ctrp/'
-    else:
-        patient_expression_root_dir = '//research/workdir/tcga/pan_cancer/data_full/'
-        cell_line_expression_root_dir = '//research/workdir/ccle/'
-        cell_line_drug_response_root_dir = '//research/workdir/ctrp/'
+    patient_expression_root_dir = f"{data_root}tcga/pan_cancer/data_full/"
+    cell_line_expression_root_dir = f"{data_root}ccle/"
+    cell_line_drug_response_root_dir = f"{data_root}ctrp/"
     
     if standardize_early:
         # Load all for standardization context
@@ -99,36 +91,17 @@ def get_tcga_brca_ctrp_ccle_full(
         cell_line_filter_mapping_column = 'solid', 
         cell_line_filter_inclusion_list = ['solid'])
     
-    if False:
-        pandas_p_exp = pd.DataFrame(
-            data_dict['patient_exp'], 
-            index = data_dict['patient_rows'])
-        pandas_cl_exp = pd.DataFrame(
-            data_dict['cl_exp'], 
-            index = data_dict['cl_exp_rows'])
-        pandas_p_exp.to_csv('/research/work/rintala/superAE_HPO/brca_data.csv')
-        pandas_cl_exp.to_csv('/research/work/rintala/superAE_HPO/ccle_data.csv')
-    
     return data_dict
 
 def get_tcga_pancan_ctrp_ccle_solid(
-        home = False, 
+        data_root = './', 
         gene_preselection = False, # TODO: create survival list for pan-cancer?
         drug_response_maxscale = False, 
         tissue_classifier = False, 
         include_metas_labels = False):
-    if home:
-        patient_expression_root_dir = '/home/teemu/research_work/tcga/pan_cancer/data_full/'
-        cell_line_expression_root_dir = '/home/teemu/research_work/ccle/'
-        cell_line_drug_response_root_dir = '/home/teemu/research_work/ctrp/'
-    elif platform == 'linux':
-        patient_expression_root_dir = '/research/work/rintala/tcga/pan_cancer/data_full/'
-        cell_line_expression_root_dir = '/research/work/rintala/ccle/'
-        cell_line_drug_response_root_dir = '/research/work/rintala/ctrp/'
-    else:
-        patient_expression_root_dir = '//research/workdir/tcga/pan_cancer/data_full/'
-        cell_line_expression_root_dir = '//research/workdir/ccle/'
-        cell_line_drug_response_root_dir = '//research/workdir/ctrp/'
+    patient_expression_root_dir = f"{data_root}tcga/pan_cancer/data_full/"
+    cell_line_expression_root_dir = f"{data_root}ccle/"
+    cell_line_drug_response_root_dir = f"{data_root}ctrp/"
     
     patient_expression_cancer_list = 'ACC,BLCA,BRCA,CESC,CHOL,COAD,DLBC,ESCA,GBM,HNSC,KICH,KIRC,KIRP,LGG,LIHC,LUAD,LUSC,MESO,OV,PAAD,PCPG,PRAD,READ,SARC,SKCM,STAD,TGCT,THCA,THYM,UCEC,UCS,UVM'
     patient_expression_cancer_list = patient_expression_cancer_list.split(sep = ',')
@@ -179,29 +152,14 @@ def get_tcga_pancan_ctrp_ccle_solid(
         cell_line_filter_mapping_column = 'solid', 
         cell_line_filter_inclusion_list = ['solid'])
     
-    if False:
-        pandas_p_exp = pd.DataFrame(
-            data_dict['patient_exp'], 
-            index = data_dict['patient_rows'])
-        pandas_cl_exp = pd.DataFrame(
-            data_dict['cl_exp'], 
-            index = data_dict['cl_exp_rows'])
-        pandas_p_exp.to_csv('/research/work/rintala/superAE_HPO/brca_data.csv')
-        pandas_cl_exp.to_csv('/research/work/rintala/superAE_HPO/ccle_data.csv')
-    
     return data_dict
 
 def get_tcga_brca(
-        home = False, 
+        data_root = './', 
         standardize_early = False, 
         gene_preselection = False, 
         drug_response_maxscale = False):
-    if home:
-        patient_expression_root_dir = '/home/teemu/research_work/tcga/pan_cancer/data_full/'
-    elif platform == 'linux':
-        patient_expression_root_dir = '/research/work/rintala/tcga/pan_cancer/data_full/'
-    else:
-        patient_expression_root_dir = '//research/workdir/tcga/pan_cancer/data_full/'
+    patient_expression_root_dir = f"{data_root}tcga/pan_cancer/data_full/"
     
     if standardize_early:
         # Load all for standardization context
@@ -237,24 +195,15 @@ def get_tcga_brca(
 
 #%% CCLE instead of CTRP
 def get_tcga_brca_ccle_full(
-        home = False, 
+        data_root = './', 
         standardize_early = False, 
         gene_preselection = False, 
         drug_response_maxscale = False, 
         tissue_classifier = False, 
         include_metas_labels = False):
-    if home:
-        patient_expression_root_dir = '/home/teemu/research_work/tcga/pan_cancer/data_full/'
-        cell_line_expression_root_dir = '/home/teemu/research_work/ccle/'
-        cell_line_drug_response_root_dir = '/home/teemu/research_work/ccle/drug_sensitivity/'
-    elif platform == 'linux':
-        patient_expression_root_dir = '/research/work/rintala/tcga/pan_cancer/data_full/'
-        cell_line_expression_root_dir = '/research/work/rintala/ccle/'
-        cell_line_drug_response_root_dir = '/research/work/rintala/ccle/drug_sensitivity/'
-    else:
-        patient_expression_root_dir = '//research/workdir/tcga/pan_cancer/data_full/'
-        cell_line_expression_root_dir = '//research/workdir/ccle/'
-        cell_line_drug_response_root_dir = '//research/workdir/ccle/drug_sensitivity/'
+    patient_expression_root_dir = f"{data_root}tcga/pan_cancer/data_full/"
+    cell_line_expression_root_dir = f"{data_root}ccle/"
+    cell_line_drug_response_root_dir = f"{data_root}ccle/drug_sensitivity/"
     
     if standardize_early:
         # Load all for standardization context
@@ -325,36 +274,17 @@ def get_tcga_brca_ccle_full(
         cell_line_filter_mapping_column = 'solid', 
         cell_line_filter_inclusion_list = ['solid'])
     
-    if False:
-        pandas_p_exp = pd.DataFrame(
-            data_dict['patient_exp'], 
-            index = data_dict['patient_rows'])
-        pandas_cl_exp = pd.DataFrame(
-            data_dict['cl_exp'], 
-            index = data_dict['cl_exp_rows'])
-        pandas_p_exp.to_csv('/research/work/rintala/superAE_HPO/brca_data.csv')
-        pandas_cl_exp.to_csv('/research/work/rintala/superAE_HPO/ccle_data.csv')
-    
     return data_dict
 
 def get_tcga_pancan_ccle_solid(
-        home = False, 
+        data_root = './', 
         gene_preselection = False, # TODO: create survival list for pan-cancer?
         drug_response_maxscale = False, 
         tissue_classifier = False, 
         include_metas_labels = False):
-    if home:
-        patient_expression_root_dir = '/home/teemu/research_work/tcga/pan_cancer/data_full/'
-        cell_line_expression_root_dir = '/home/teemu/research_work/ccle/'
-        cell_line_drug_response_root_dir = '/home/teemu/research_work/ccle/drug_sensitivity/'
-    elif platform == 'linux':
-        patient_expression_root_dir = '/research/work/rintala/tcga/pan_cancer/data_full/'
-        cell_line_expression_root_dir = '/research/work/rintala/ccle/'
-        cell_line_drug_response_root_dir = '/research/work/rintala/ccle/drug_sensitivity/'
-    else:
-        patient_expression_root_dir = '//research/workdir/tcga/pan_cancer/data_full/'
-        cell_line_expression_root_dir = '//research/workdir/ccle/'
-        cell_line_drug_response_root_dir = '//research/workdir/ccle/drug_sensitivity/'
+    patient_expression_root_dir = f"{data_root}tcga/pan_cancer/data_full/"
+    cell_line_expression_root_dir = f"{data_root}ccle/"
+    cell_line_drug_response_root_dir = f"{data_root}ccle/drug_sensitivity/"
     
     patient_expression_cancer_list = 'ACC,BLCA,BRCA,CESC,CHOL,COAD,DLBC,ESCA,GBM,HNSC,KICH,KIRC,KIRP,LGG,LIHC,LUAD,LUSC,MESO,OV,PAAD,PCPG,PRAD,READ,SARC,SKCM,STAD,TGCT,THCA,THYM,UCEC,UCS,UVM'
     patient_expression_cancer_list = patient_expression_cancer_list.split(sep = ',')
@@ -406,38 +336,19 @@ def get_tcga_pancan_ccle_solid(
         cell_line_filter_mapping_file = 'Model_augmented.csv', 
         cell_line_filter_mapping_column = 'solid', 
         cell_line_filter_inclusion_list = ['solid'])
-
-    if False:
-        pandas_p_exp = pd.DataFrame(
-            data_dict['patient_exp'], 
-            index = data_dict['patient_rows'])
-        pandas_cl_exp = pd.DataFrame(
-            data_dict['cl_exp'], 
-            index = data_dict['cl_exp_rows'])
-        pandas_p_exp.to_csv('/research/work/rintala/superAE_HPO/brca_data.csv')
-        pandas_cl_exp.to_csv('/research/work/rintala/superAE_HPO/ccle_data.csv')
     
     return data_dict
 
 def get_scanb_ccle_full(
-        home = False, 
+        data_root = './', 
         standardize_early = False, 
         gene_preselection = False, 
         drug_response_maxscale = False, 
         tissue_classifier = False, 
         include_metas_labels = False):
-    if home:
-        patient_expression_root_dir = '/home/teemu/research_work/scanb_preprocessed/'
-        cell_line_expression_root_dir = '/home/teemu/research_work/ccle/'
-        cell_line_drug_response_root_dir = '/home/teemu/research_work/ccle/drug_sensitivity/'
-    elif platform == 'linux':
-        patient_expression_root_dir = '/research/work/rintala/scanb_preprocessed/'
-        cell_line_expression_root_dir = '/research/work/rintala/ccle/'
-        cell_line_drug_response_root_dir = '/research/work/rintala/ccle/drug_sensitivity/'
-    else:
-        patient_expression_root_dir = '//research/workdir/scanb_preprocessed/'
-        cell_line_expression_root_dir = '//research/workdir/ccle/'
-        cell_line_drug_response_root_dir = '//research/workdir/ccle/drug_sensitivity/'
+    patient_expression_root_dir = f"{data_root}scanb_preprocessed/"
+    cell_line_expression_root_dir = f"{data_root}ccle/"
+    cell_line_drug_response_root_dir = f"{data_root}ccle/drug_sensitivity/"
     
     if gene_preselection:
         patient_expression_filter_file = 'survival_genes_selected.txt'
@@ -501,32 +412,16 @@ def get_scanb_ccle_full(
         cell_line_filter_mapping_column = 'solid', 
         cell_line_filter_inclusion_list = ['solid'])
     
-    if False:
-        pandas_p_exp = pd.DataFrame(
-            data_dict['patient_exp'], 
-            index = data_dict['patient_rows'])
-        pandas_cl_exp = pd.DataFrame(
-            data_dict['cl_exp'], 
-            index = data_dict['cl_exp_rows'])
-        pandas_p_exp.to_csv('/research/work/rintala/superAE_HPO/brca_data.csv')
-        pandas_cl_exp.to_csv('/research/work/rintala/superAE_HPO/ccle_data.csv')
-    
     return data_dict
 
 #%% CCLE
 def get_ccle_solid(
-        home = False, 
+        data_root = './', 
         gene_preselection = False, # TODO: create survival list for pan-cancer?
         drug_response_maxscale = False):
-    if home:
-        cell_line_expression_root_dir = '/home/teemu/research_work/ccle/'
-        cell_line_drug_response_root_dir = '/home/teemu/research_work/ccle/drug_sensitivity/'
-    elif platform == 'linux':
-        cell_line_expression_root_dir = '/research/work/rintala/ccle/'
-        cell_line_drug_response_root_dir = '/research/work/rintala/ccle/drug_sensitivity/'
-    else:
-        cell_line_expression_root_dir = '//research/workdir/ccle/'
-        cell_line_drug_response_root_dir = '//research/workdir/ccle/drug_sensitivity/'
+    cell_line_expression_root_dir = f"{data_root}ccle/"
+    cell_line_drug_response_root_dir = f"{data_root}ccle/drug_sensitivity/"
+    
     data_dict = complete_data_loader(
         cell_line_expression_root_dir = cell_line_expression_root_dir,
         cell_line_expression_file = 'CCLE_expression.csv',
@@ -547,13 +442,9 @@ def get_ccle_solid(
     return data_dict
 
 #%% scanb
-def get_scanb(home = False):
-    if home:
-        scanb_path = '/home/teemu/research_work/scanb_preprocessed/'
-    elif platform == 'linux':
-        scanb_path = '/research/work/rintala/scanb_preprocessed/'
-    else:
-        scanb_path = '//research/workdir/scanb_preprocessed/'
+def get_scanb(data_root = './'):
+    scanb_path = f"{data_root}scanb_preprocessed/"
+    
     scanb_data_dict = complete_data_loader(
         patient_expression_root_dir = scanb_path,
         patient_expression_cancer_list = ['.'],
@@ -575,24 +466,15 @@ def get_scanb(home = False):
 #%% scanb with ccle ctrp
 
 def get_scanb_ctrp_ccle_full(
-        home = False, 
+        data_root = './', 
         standardize_early = False, 
         gene_preselection = False, 
         drug_response_maxscale = False, 
         tissue_classifier = False, 
         include_metas_labels = False):
-    if home:
-        patient_expression_root_dir = '/home/teemu/research_work/scanb_preprocessed/'
-        cell_line_expression_root_dir = '/home/teemu/research_work/ccle/'
-        cell_line_drug_response_root_dir = '/home/teemu/research_work/ctrp/'
-    elif platform == 'linux':
-        patient_expression_root_dir = '/research/work/rintala/scanb_preprocessed/'
-        cell_line_expression_root_dir = '/research/work/rintala/ccle/'
-        cell_line_drug_response_root_dir = '/research/work/rintala/ctrp/'
-    else:
-        patient_expression_root_dir = '//research/workdir/scanb_preprocessed/'
-        cell_line_expression_root_dir = '//research/workdir/ccle/'
-        cell_line_drug_response_root_dir = '//research/workdir/ctrp/'
+    patient_expression_root_dir = f"{data_root}scanb_preprocessed/"
+    cell_line_expression_root_dir = f"{data_root}ccle/"
+    cell_line_drug_response_root_dir = f"{data_root}ctrp/"
     
     if gene_preselection:
         patient_expression_filter_file = 'survival_genes_selected.txt'
@@ -657,13 +539,9 @@ def get_scanb_ctrp_ccle_full(
     return data_dict
 
 #%% Bruna pdtc and pdtx
-def get_bruna_pdtc(home = False):
-    if home:
-        bruna_path = '/home/teemu/research_work/breast_pdtc_bruna/'
-    elif platform == 'linux':
-        bruna_path = '/research/work/rintala/breast_pdtc_bruna/'
-    else:
-        bruna_path = '//research/workdir/breast_pdtc_bruna/'
+def get_bruna_pdtc(data_root = './'):
+    bruna_path = f"{data_root}breast_pdtc_bruna/"
+    
     bruna_data_dict = complete_data_loader(
         cell_line_expression_root_dir = bruna_path,
         cell_line_expression_file = 'pdtc_exp_imputed.csv.gz',
@@ -674,13 +552,9 @@ def get_bruna_pdtc(home = False):
     
     return bruna_data_dict
 
-def get_bruna_pdtx(home = False):
-    if home:
-        bruna_path = '/home/teemu/research_work/breast_pdtc_bruna/'
-    elif platform == 'linux':
-        bruna_path = '/research/work/rintala/breast_pdtc_bruna/'
-    else:
-        bruna_path = '//research/workdir/breast_pdtc_bruna/'
+def get_bruna_pdtx(data_root = './'):
+    bruna_path = f"{data_root}breast_pdtc_bruna/"
+    
     bruna_data_dict = complete_data_loader(
         cell_line_expression_root_dir = bruna_path,
         cell_line_expression_file = 'pdtx_exp_imputed.csv.gz',
@@ -693,13 +567,9 @@ def get_bruna_pdtx(home = False):
 
 
 #%% GAO PDX
-def get_gao_pdx(home = False):
-    if home:
-        gao_path = '/home/teemu/research_work/pdtc_gao/'
-    elif platform == 'linux':
-        gao_path = '/research/work/rintala/pdtc_gao/'
-    else:
-        gao_path = '//research/workdir/pdtc_gao/'
+def get_gao_pdx(data_root = './'):
+    gao_path = f"{data_root}pdtc_gao/"
+    
     gao_data_dict = complete_data_loader(
         cell_line_expression_root_dir = gao_path,
         cell_line_expression_file = 'exp_tpm_uq.csv.gz',
@@ -712,22 +582,13 @@ def get_gao_pdx(home = False):
 
 #%% Alternative drug-sensitivity
 def get_xia_ctrp_data(
-        home = False, 
+        data_root = './', 
         tissue_classifier = False, 
         include_metas_labels = False, 
         exclude_metas_data = False):
-    if home:
-        patient_expression_root_dir = '/home/teemu/research_work/tcga/pan_cancer/data_full/'
-        cell_line_expression_root_dir = '/home/teemu/research_work/ccle/'
-        cell_line_drug_response_root_dir = '/home/teemu/research_work/drug_response_dataset/'
-    elif platform == 'linux':
-        patient_expression_root_dir = '/research/work/rintala/tcga/pan_cancer/data_full/'
-        cell_line_expression_root_dir = '/research/work/rintala/ccle/'
-        cell_line_drug_response_root_dir = '/research/work/rintala/drug_response_dataset/'
-    else:
-        patient_expression_root_dir = '//research/workdir/tcga/pan_cancer/data_full/'
-        cell_line_expression_root_dir = '//research/workdir/ccle/'
-        cell_line_drug_response_root_dir = '//research/workdir/drug_response_dataset/'
+    patient_expression_root_dir = f"{data_root}tcga/pan_cancer/data_full/"
+    cell_line_expression_root_dir = f"{data_root}ccle/"
+    cell_line_drug_response_root_dir = f"{data_root}drug_response_dataset/"
     
     patient_expression_cancer_list = 'ACC,BLCA,BRCA,CESC,CHOL,COAD,DLBC,ESCA,GBM,HNSC,KICH,KIRC,KIRP,LGG,LIHC,LUAD,LUSC,MESO,OV,PAAD,PCPG,PRAD,READ,SARC,SKCM,STAD,TGCT,THCA,THYM,UCEC,UCS,UVM'
     patient_expression_cancer_list = patient_expression_cancer_list.split(sep = ',')
@@ -795,13 +656,12 @@ def get_xia_ctrp_data(
 
 #%% CTRDB 
 import os, json
-def get_ctrdb(home = False, dataset = None):
-    if home:
-        ctrdb_path = '/home/teemu/research_work/ctrdb/'
-    elif platform == 'linux':
-        ctrdb_path = '/research/work/rintala/ctrdb/'
-    else:
-        ctrdb_path = '//research/workdir/ctrdb/'
+def get_ctrdb(
+        data_root = './', 
+        dataset = None
+):    
+    ctrdb_path = "f{data_root}ctrdb/"
+    
     dataset_log_map_file = f"{ctrdb_path}log2_transform_map.json"
     with open(dataset_log_map_file, 'r') as f:
         dataset_log_map = json.load(f)
@@ -815,13 +675,9 @@ def get_ctrdb(home = False, dataset = None):
     
     return ctrdb_data_dict
 
-def get_ctrdb_datasets(home = False):
-    if home:
-        ctrdb_path = '/home/teemu/research_work/ctrdb/'
-    elif platform == 'linux':
-        ctrdb_path = '/research/work/rintala/ctrdb/'
-    else:
-        ctrdb_path = '//research/workdir/ctrdb/'
+def get_ctrdb_datasets(data_root = './'):
+    ctrdb_path = "f{data_root}ctrdb/"
+    
     ctrb_datasets_file = f"{ctrdb_path}non_tcga_datasets.json"
     with open(ctrb_datasets_file, 'r') as f:
         ctrb_datasets = json.load(f)
@@ -839,14 +695,9 @@ def match_genes(x_in, rows_in, rows_target):
     return x_out
 
     
-def get_cell_line_labels(home = False):
-    if home:
-        ccle_path = '/home/teemu/research_work/ccle/'
-    elif platform == 'linux':
-        ccle_path = '/research/work/rintala/ccle/'
-    else:
-        ccle_path = '//research/workdir/ccle/'
-    #ccle_type_fn = f"{ccle_path}oncotree_level1.csv"
+def get_cell_line_labels(data_root = './'):
+    ccle_path = f"{data_root}ccle/"
+    
     ccle_labels = pd.read_csv(f"{ccle_path}oncotree_level1.csv", index_col = 0)
     return ccle_labels
 
