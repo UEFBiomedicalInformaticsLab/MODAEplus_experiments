@@ -1,5 +1,12 @@
-data_root <- "/data/"
-output_dir <- "/output/"
+data_root <- Sys.getenv("MODAE_DATA_PATH")
+if (data_root == "") {
+  stop("Please define the MODAE_DATA_PATH environment variable.")
+}
+output_dir <- Sys.getenv("MODAE_OUTPUT_PATH")
+if (output_dir == "") {
+  stop("Please define the MODAE_OUTPUT_PATH environment variable.")
+}
+
 patient_expression_root_dir <- paste0(data_root, "tcga/pan_cancer/data_full/")
 cell_line_expression_root_dir <- paste0(data_root, "ccle/")
 cell_line_drug_response_root_dir <- paste0(data_root, "ctrp/")
