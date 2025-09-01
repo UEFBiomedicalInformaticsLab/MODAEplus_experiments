@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name=TCGA_SUPERAE_EVAL
+#SBATCH --job-name=TCGA_MODAE_EVAL
 #SBATCH -N 1
 #SBATCH -n 1
 #SBATCH --cpus-per-task=2
@@ -7,14 +7,12 @@
 ##SBATCH --gres=gpu:1
 #SBATCH --mem=40G
 #SBATCH -t 3-00:00:00
-#SBATCH --output=log/TCGA_SUPERAE_EVAL.%A.out
-#SBATCH --error=log/TCGA_SUPERAE_EVAL.%A.err
+#SBATCH --output=log/TCGA_MODAE_EVAL.%A.out
+#SBATCH --error=log/TCGA_MODAE_EVAL.%A.err
 #SBATCH --mail-user=teemu.rintala@uef.fi
 #SBATCH --mail-type=NONE
 
-#source $HOME/tensorflow_24/bin/activate
-#source $HOME/tensorflow_23/bin/activate
-source /userapps/rintala/tensorflow/bin/activate
 export TF_CPP_MIN_LOG_LEVEL=2
-
-python external_evaluation/external_validation.py 2> >(grep -v " I " >&2)
+apptainer execute modae.sif python \
+    external_evaluation/external_validation.py \
+    2> >(grep -v " I " >&2)

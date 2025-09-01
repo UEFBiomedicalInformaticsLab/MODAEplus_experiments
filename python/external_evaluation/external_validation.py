@@ -94,73 +94,9 @@ else:
     weight_analysis = False
     save_original_expression = False
 
-#res_path = base_path + '20230821_random_search/brca_test_noclfilter/'
-#res_path = base_path + '20231027_random_search/brca_test_noclfilter/'
-#res_path = base_path + '20231101_random_search/brca_test_noclfilter/'
-#res_path = base_path + '20231103_random_search/brca_test_noclfilter/'
-#res_path = base_path + '20231120_random_search/brca_test_noclfilter/'
-#res_path = base_path + '20231121_random_search/brca_test_noclfilter/'
-#res_path = base_path + '20231124_random_search/pancan_test/'
-#res_path = base_path + '20240103_random_search/brca_test_noclfilter/'
-#res_path = base_path + '20240108_random_search/brca_test_noclfilter/'
-#res_path = base_path + '20240115_random_search/brca_test_noclfilter/'
-#res_path = base_path + '20240118_random_search/brca_test_noclfilter/'
-#res_path = base_path + '20240119_random_search/brca_test_noclfilter/'
-#res_path = base_path + '20240123_random_search/brca_test_noclfilter/'
-#res_path = base_path + '20240124_random_search/brca_test_noclfilter/'
-#res_path = base_path + '20240124_random_search/brca_test_noclfilter_alternative/'
-#res_path = base_path + '20240125_random_search/brca_test_noclfilter/'
-#res_path = base_path + '20240125_random_search/brca_test_noclfilter_nopre/'
-#res_path = base_path + '20240206_random_search/brca_test_noclfilter/'
-#res_path = base_path + '20240208_random_search/brca_test_noclfilter/'
-#res_path = base_path + '20240211_random_search/brca_test_noclfilter/'
-#res_path = base_path + '20240213_random_search/brca_test_noclfilter/'
-#res_path = base_path + '20240213_random_search/brca_test_noclfilter_pretrain/'
-#res_path = base_path + '20240215_random_search/pancan_test/'
-#res_path = base_path + '20240216_random_search/brca_test_noclfilter_pretrain/'
-#res_path = base_path + '20240221_random_search/scanb_test_noclfilter/'
-#res_path = base_path + '20240301_random_search/scanb_test_noclfilter/'
-#res_path = base_path + '20240302_random_search/scanb_test_noclfilter/'
-#res_path = base_path + '20240303_random_search/scanb_test_noclfilter/'
-#res_path = base_path + '20240328_random_search/scanb_test_noclfilter/'
-#res_path = base_path + '20240430_random_search/scanb_test_noclfilter/'
-#res_path = base_path + '20240605_random_search/scanb_test_noclfilter/'
-#res_path = base_path + '20240610_random_search/scanb_test_noclfilter/'
-#res_path = base_path + '20240614_random_search/pancan_test/'
-#res_path = base_path + '20240816_random_search/scanb_test_noclfilter/'
-#res_path = base_path + '20241210_random_search/pancan_test/'
-#res_path = base_path + '20241218_random_search/pancan_test/'
-#res_path = base_path + '20250108_random_search/pancan_test/'
-#res_path = base_path + '20250110_random_search/pancan_test/'
-#res_path = base_path + '20250121_random_search/pancan_test/'
-#res_path = base_path + '20250124_random_search/pancan_test/'
-#res_path = base_path + '20250202_random_search/pancan_test/'
-#res_path = base_path + '20250205_random_search/scanb_test_noclfilter/'
-#res_path = base_path + '20250207_random_search/pancan_test/'
-#res_path = base_path + '20250216_random_search/pancan_test/'
-#res_path = base_path + '20250217_random_search/pancan_test/'
-#res_path = base_path + '20250219_random_search/pancan_test/'
-#res_path = base_path + '20250223_random_search/pancan_test/'
-#res_path = base_path + '20250313_random_search/pancan_test/'
-#res_path = base_path + '20250402_random_search/pancan_test/'
-#res_path = base_path + '20250404_random_search/pancan_test/'
-#res_path = base_path + '20250408_random_search/pancan_test/'
 #res_path = base_path + '20250410_random_search/pancan_test/'
 res_path = base_path + '20250410_random_search/pancan_ablation_test/'
-#res_path = base_path + '20250415_random_search/pancan_test/'
-#res_path = base_path + '20250506_random_search/pancan_test/'
-#res_path = base_path + '20250520_random_search/pancan_test/'
-#res_path = base_path + '20250525_random_search/pancan_test/' 
-#res_path = base_path + '20250527_random_search/pancan_test/' 
-#res_path = base_path + '20250530_random_search/pancan_test/' 
-#res_path = base_path + '20250603_random_search/pancan_test/' 
 
-run_date = re.sub('[a-z_]*/[a-z_]*/$', '', res_path)
-run_date = re.sub('^.*/', '', run_date)
-dss_sensitivity = int(run_date) >= 20250313 and int(run_date) <= 20250527
-include_metas_labels = int(run_date) >= 20250404 and int(run_date) <= 20250410
-include_metas_labels = include_metas_labels or (int(run_date) >= 20250506 and int(run_date) <= 20250520) or (int(run_date) >= 20250603 and int(run_date) <= 20250603)
-exclude_metas_data = int(run_date) >= 20250527 and int(run_date) <= 20250527
 
 if 'ablation' in res_path:
     #ablation_string = 'no_classifier'
@@ -185,6 +121,14 @@ else:
         parameter_json = True
 
 os.makedirs(f"{res_path}external_evaluation/", exist_ok = True)
+
+'''
+Note that these must match the training settings. 
+TODO: implement automation for settings
+'''
+dss_sensitivity = True
+include_metas_labels = True
+exclude_metas_data = False
 
 if parameter_json:
     from sae.parsing_utilities import modae_args_json_decoder
