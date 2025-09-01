@@ -1,0 +1,14 @@
+Bootstrap: docker
+From: tensorflow/tensorflow:2.19.0 #nvcr.io/nvidia/tensorflow:25.02-tf2-py3
+
+%files
+    $MODAE_PATH /MODAE
+
+%post
+    apt update && apt install -y spyder
+    pip install --no-cache-dir /MODAE
+    mkdir /data
+    mkdir /scripts
+
+%runscript
+    exec python -m modae.training_program "$@"
