@@ -75,15 +75,15 @@ cl_rnaseq_project <- sapply(
 names(cl_rnaseq_project) <- rownames(cl_rnaseq)
 table(cl_rnaseq_project)
 
-fn <- paste0(xia_path, "combined_single_response_agg.csv.gz")
-dr_data <- read.csv(fn, header = TRUE)
+fn <- paste0(xia_path, "combined_single_response_agg")
+dr_data <- readr::read_tsv(fn)
 
 dr_cell_ids <- unique(dr_data[["CELL"]])
 table(cl_rnaseq_project[dr_cell_ids])
 
 table(strip_nan(tolower(dr_cell_ids)) %in% strip_nan(tolower(rownames(cl_rnaseq))))
 
-ctrp_xia_dr_cell_ids <- unique(dr_data[dr_data[["SOURCE"]] == "CTRP", "CELL"])
+ctrp_xia_dr_cell_ids <- unique(dr_data[["CELL"]][dr_data[["SOURCE"]] == "CTRP"])
 ctrp_xia_dr_cell_ccle_idx <- match(
   ctrp_xia_dr_cell_ids, 
   cl_mapping[[2]]
@@ -101,7 +101,7 @@ write.csv(ctrp_ccle_xia_id_map, gzfile(fnw))
 
 fnw <- paste0(xia_path, "xia_ctrp_screen_dss.csv.gz")
 write.csv(
-  dr_data[
+  as.data.frame(dr_data)[
     dr_data[["CELL"]] %in% ctrp_xia_dr_cell_ids, 
     c("DSS1"), 
     drop = FALSE
@@ -111,7 +111,7 @@ write.csv(
 
 fnw <- paste0(xia_path, "xia_ctrp_screen_info.csv.gz")
 write.csv(
-  dr_data[
+  as.data.frame(dr_data)[
     dr_data[["CELL"]] %in% ctrp_xia_dr_cell_ids, 
     c("CELL", "DRUG"), 
     drop = FALSE
