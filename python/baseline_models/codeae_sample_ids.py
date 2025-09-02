@@ -23,26 +23,18 @@ def set_seed(seed):
     if torch.cuda.device_count() > 0:
         torch.cuda.manual_seed_all(seed)
 
-from sys import platform
-from socket import gethostname
-if gethostname() == 'teemu-pc':
-    base_path = '/home/teemu/research_work/'
-    home = True
-elif platform == 'linux':
-    base_path = '/research/work/rintala/'
-    home = False
-else:
-    base_path = '//research.uefad.uef.fi/workdir/'
-    home = False
+data_root = os.environ.get('MODAE_DATA_PATH', default = None)
+if data_root is None:
+    raise ValueError('Please define MODAE_DATA_PATH')
 
-root_data_folder = f"{base_path}CODE-AE-v1.0/data/"
-raw_data_folder = os.path.join(root_data_folder, 'raw_dat')
+codeae_data_folder = f"{data_root}CODE-AE-v1.0/data/"
+raw_data_folder = os.path.join(codeae_data_folder, 'raw_dat')
 ccle_folder = os.path.join(raw_data_folder, 'CCLE')
 ccle_sample_file = os.path.join(ccle_folder, 'sample_info.csv')
 xena_folder = os.path.join(raw_data_folder, 'Xena')
 xena_sample_file = os.path.join(xena_folder, 'TCGA_phenotype_denseDataOnlyDownload.tsv.gz')
 
-preprocessed_data_folder = os.path.join(root_data_folder, 'preprocessed_dat')
+preprocessed_data_folder = os.path.join(codeae_data_folder, 'preprocessed_dat')
 gex_feature_file = os.path.join(preprocessed_data_folder, 'uq1000_feature.csv')
 gex_features_df = pd.read_csv(gex_feature_file, index_col = 0)
 seed = 2020
