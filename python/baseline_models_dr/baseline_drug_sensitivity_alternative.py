@@ -31,6 +31,15 @@ else:
     root_dir = '//research/workdir/drug_response_dataset/'
     home = False
 
+output_path = os.environ.get('MODAE_OUTPUT_PATH', default = None)
+if output_path is None:
+    raise ValueError('Please define MODAE_OUTPUT_PATH')
+data_root = os.environ.get('MODAE_DATA_PATH', default = None)
+if data_root is None:
+    raise ValueError('Please define MODAE_DATA_PATH')
+
+
+
 eln_aac = pd.read_csv(root_dir + 'elasticnet_aac1.csv', header = 0, index_col = 0)
 eln_aac_old = pd.read_csv(root_dir + 'elasticnet_aac_old.csv', header = 0, index_col = 0)
 eln_aac_old_fixed = pd.read_csv(root_dir + 'elasticnet_aac_old_fixed.csv', header = 0, index_col = 0)

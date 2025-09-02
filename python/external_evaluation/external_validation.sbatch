@@ -12,7 +12,6 @@
 #SBATCH --mail-user=teemu.rintala@uef.fi
 #SBATCH --mail-type=NONE
 
-export TF_CPP_MIN_LOG_LEVEL=2
 apptainer execute modae.sif python \
     external_evaluation/external_validation.py \
     2> >(grep -v " I " >&2)

@@ -7,13 +7,16 @@ From: tensorflow/tensorflow:2.19.0
     ../../MODAEplus /MODAE
 
 %post
-	mkdir /data
+    mkdir /data
+    mkdir /scripts
     mkdir /output
     pip install --no-cache-dir /MODAE
 
 %environment
     export MODAE_DATA_PATH=/data
-	export MODAE_OUTPUT_PATH=/output
+    export MODAE_SCRIPT_PATH=/scripts
+    export MODAE_OUTPUT_PATH=/output
+    export TF_CPP_MIN_LOG_LEVEL=2
 
 %runscript
     exec python3 -m modae.training_program "$@"
