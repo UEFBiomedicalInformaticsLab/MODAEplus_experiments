@@ -14,6 +14,7 @@
 source $HOME/tensorflow_23/bin/activate 
 python baseline_models_dr/baseline_drug_sensitivity_main.py \
   --root_dir=/research/work/rintala/ctrp/ \
+  --result_file=forward_selection_all_drugs.csv \
   --identical_data \
   --threads=20 \
   --feature_selection_only \
