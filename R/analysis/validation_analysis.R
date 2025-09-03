@@ -220,15 +220,15 @@ for (save_dir in save_dirs) {
   
   # Baseline drug-response prediction models
   {
-    #old1_elnet_dr_r2 <- read.csv(paste0(ctrp_path, "../drug_response_dataset/elasticnet_aac1.csv"))
-    #old2_elnet_dr_r2 <- read.csv(paste0(ctrp_path, "../drug_response_dataset/elasticnet_aac_old_fixed.csv"))
-    #old3_elnet_dr_r2 <- read.csv(paste0(ctrp_path, "../drug_response_dataset/elasticnet_aac_old.csv"))
+    #old1_elnet_dr_r2 <- read.csv(paste0(xia_path, "elasticnet_aac1.csv"))
+    #old2_elnet_dr_r2 <- read.csv(paste0(xia_path, "elasticnet_aac_old_fixed.csv"))
+    #old3_elnet_dr_r2 <- read.csv(paste0(xia_path, "elasticnet_aac_old.csv"))
     
-    fs1_elnet_dr_r2 <- read.csv(paste0(ctrp_path, "../drug_response_dataset/fs_elasticnet_aac_old.csv"))
-    #fs2_elnet_dr_r2 <- read.csv(paste0(ctrp_path, "../drug_response_dataset/fs_elasticnet_aac_old_fixed.csv"))
+    fs1_elnet_dr_r2 <- read.csv(paste0(xia_path, "fs_elasticnet_aac_old.csv"))
+    #fs2_elnet_dr_r2 <- read.csv(paste0(xia_path, "fs_elasticnet_aac_old_fixed.csv"))
     
-    pca10_elnet_dr_r2 <- read.csv(paste0(ctrp_path, "../drug_response_dataset/pca10_elasticnet_aac_old.csv"))
-    pca100_elnet_dr_r2 <- read.csv(paste0(ctrp_path, "../drug_response_dataset/pca100_elasticnet_aac_old.csv"))
+    pca10_elnet_dr_r2 <- read.csv(paste0(xia_path, "pca10_elasticnet_aac_old.csv"))
+    pca100_elnet_dr_r2 <- read.csv(paste0(xia_path, "pca100_elasticnet_aac_old.csv"))
     
     fs1_elnet_dr_r2[["model"]] <- "fs_elnet"
     pca10_elnet_dr_r2[["model"]] <- "pca10_elnet"

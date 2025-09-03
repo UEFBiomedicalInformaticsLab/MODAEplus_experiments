@@ -5,34 +5,36 @@ import pandas as pd
 
 import importlib.util
 import sys
+import os
 
 nthreads = 40
 pca_model = False
 
-dsc_spec = importlib.util.spec_from_file_location('dataset_collections', 'datasets/cancer_dataset_collections.py')
+dsc_spec = importlib.util.spec_from_file_location(
+    'dataset_collections', 
+    'datasets/cancer_dataset_collections.py'
+)
 dsc = importlib.util.module_from_spec(dsc_spec)
 sys.modules['dataset_collections'] = dsc
 dsc_spec.loader.exec_module(dsc)
 
-bsm_spec = importlib.util.spec_from_file_location('baseline_survival_models', 'baseline_models_surv/baseline_survival_models.py')
+bsm_spec = importlib.util.spec_from_file_location(
+    'baseline_survival_models', 
+    'baseline_models_surv/baseline_survival_models.py'
+)
 bsm = importlib.util.module_from_spec(bsm_spec)
 sys.modules['baseline_survival_models'] = bsm
 bsm_spec.loader.exec_module(bsm)
 
 #%% 
-from sys import platform
-from socket import gethostname
-if gethostname() == 'teemu-pc':
-    base_path = '/home/teemu/research_work/'
-    home = True
-elif platform == 'linux':
-    base_path = '/research/work/rintala/'
-    home = False
-else:
-    base_path = '//research.uefad.uef.fi/workdir/'
-    home = False
+output_path = os.environ.get('MODAE_OUTPUT_PATH', default = None)
+if output_path is None:
+    raise ValueError('Please define MODAE_OUTPUT_PATH')
+data_root = os.environ.get('MODAE_DATA_PATH', default = None)
+if data_root is None:
+    raise ValueError('Please define MODAE_DATA_PATH')
 
-res_path = f"{base_path}baseline_results/survival/"
+res_path = f"{output_path}baseline_results/survival/"
 
 #%% Load internal data
 #source_dataset = 'scanb'
@@ -44,16 +46,22 @@ gene_preselection = False
 
 if source_dataset == 'tcga_brca':
     from dataset_collections import get_tcga_brca_ctrp_ccle_full
-    internal_data_dict = get_tcga_brca_ctrp_ccle_full(home = home, gene_preselection = gene_preselection)
+    internal_data_dict = get_tcga_brca_ctrp_ccle_full(
+        data_root = data_root, 
+        gene_preselection = gene_preselection
+    )
     res_path += 'brca/tcga/'
 elif source_dataset == 'scanb':
     from dataset_collections import get_scanb_ctrp_ccle_full
-    internal_data_dict = get_scanb_ctrp_ccle_full(home = home, gene_preselection = gene_preselection)
+    internal_data_dict = get_scanb_ctrp_ccle_full(
+        data_root = data_root, 
+        gene_preselection = gene_preselection
+    )
     res_path += 'brca/scanb/'
 elif source_dataset == 'tcga':
     from dataset_collections import get_tcga_pancan_ctrp_ccle_solid
     internal_data_dict = get_tcga_pancan_ctrp_ccle_solid(
-        home = home, 
+        data_root = data_root, 
         gene_preselection = gene_preselection, 
         tissue_classifier = False
     )
@@ -68,10 +76,10 @@ os.makedirs(res_path, exist_ok = True)
 
 if target_dataset == 'scanb':
     from dataset_collections import get_scanb
-    external_data_dict = get_scanb(home = home)
+    external_data_dict = get_scanb(data_root = data_root)
 elif target_dataset == 'tcga_brca':
     from dataset_collections import get_tcga_brca
-    external_data_dict = get_tcga_brca(home = home)
+    external_data_dict = get_tcga_brca(data_root = data_root)
 else:
     external_data_dict = None
 

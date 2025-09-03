@@ -200,13 +200,13 @@ generate_comparisons <- function(
   
   # Baseline drug sensitivity prediction
   if (gene_preselection) {
-    pca10_elnet_dr_r2 <- read.csv(paste0(ctrp_path, "../drug_response_dataset/pca10_elasticnet_aac_identical.csv"))
-    pca100_elnet_dr_r2 <- read.csv(paste0(ctrp_path, "../drug_response_dataset/pca100_elasticnet_aac_identical.csv"))
-    fs_elnet_dr_r2 <- read.csv(paste0(ctrp_path, "../drug_response_dataset/fs_elasticnet_aac_identical.csv"))
+    pca10_elnet_dr_r2 <- read.csv(paste0(xia_path, "pca10_elasticnet_aac_identical.csv"))
+    pca100_elnet_dr_r2 <- read.csv(paste0(xia_path, "pca100_elasticnet_aac_identical.csv"))
+    fs_elnet_dr_r2 <- read.csv(paste0(xia_path, "fs_elasticnet_aac_identical.csv"))
   } else {
-    pca10_elnet_dr_r2 <- read.csv(paste0(ctrp_path, "../drug_response_dataset/pca10_elasticnet_aac_old.csv"))
-    pca100_elnet_dr_r2 <- read.csv(paste0(ctrp_path, "../drug_response_dataset/pca100_elasticnet_aac_old.csv"))
-    fs_elnet_dr_r2 <- read.csv(paste0(ctrp_path, "../drug_response_dataset/fs_elasticnet_aac_old.csv"))
+    pca10_elnet_dr_r2 <- read.csv(paste0(xia_path, "pca10_elasticnet_aac_old.csv"))
+    pca100_elnet_dr_r2 <- read.csv(paste0(xia_path, "pca100_elasticnet_aac_old.csv"))
+    fs_elnet_dr_r2 <- read.csv(paste0(xia_path, "fs_elasticnet_aac_old.csv"))
   }
   
   fold_fixer <- function(x) plyr::ddply(x, c("drug"), function(y) {y[["fold"]] <- 1:5; return(y)})

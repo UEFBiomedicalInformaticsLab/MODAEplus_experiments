@@ -79,13 +79,12 @@ data_root = os.environ.get('MODAE_DATA_PATH', default = None)
 if data_root is None:
     raise ValueError('Please define MODAE_DATA_PATH')
 
-save_weights = True
-weight_analysis = True
-save_original_expression = True
-
 res_path = f"{output_path}20250410_random_search/pancan_test/"
 #res_path = f"{output_path}20250410_random_search/pancan_ablation_test/"
 
+save_weights = True
+weight_analysis = True
+save_original_expression = True
 
 if 'ablation' in res_path:
     #ablation_string = 'no_classifier'

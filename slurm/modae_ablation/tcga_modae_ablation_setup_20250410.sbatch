@@ -15,10 +15,12 @@
 ##SBATCH --account=project_2005873
 #SBATCH --exclude=kudos[12]
 
-export PROJ_PATH=/research/work/rintala
-export SAVE_PATH=$PROJ_PATH/superAE_HPO/20250410_random_search/
+export DATA_PATH=/data
+export SAVE_PATH=/output/20250410_random_search/
 
-export SOLID_CANCER_LIST=ACC,BLCA,BRCA,CESC,CHOL,COAD,DLBC,ESCA,GBM,HNSC,KICH,KIRC,KIRP,LGG,LIHC,LUAD,LUSC,MESO,OV,PAAD,PCPG,PRAD,READ,SARC,SKCM,STAD,TGCT,THCA,THYM,UCEC,UCS,UVM
+export SOLID_CANCER_LIST="ACC,BLCA,BRCA,CESC,CHOL,COAD,DLBC,ESCA,GBM,HNSC,\
+KICH,KIRC,KIRP,LGG,LIHC,LUAD,LUSC,MESO,OV,PAAD,PCPG,PRAD,READ,SARC,SKCM,\
+STAD,TGCT,THCA,THYM,UCEC,UCS,UVM"
 
 export SAVE_PATH=${SAVE_PATH}pancan_ablation_test/
 export NAME=pancan_test_
@@ -30,14 +32,10 @@ export FILTER_FILE=Model_augmented.csv
 export FILTER_COLUMN=solid
 export FILTER_INCLUDE=solid
 
-#module load tensorflow/2.13
-#source $HOME/tensorflow_24/bin/activate
-source /userapps/rintala/tensorflow/bin/activate
-export TF_CPP_MIN_LOG_LEVEL=2
-#export PROG_PATH=/projappl/project_2005873/superAE/src/sae/training_program.py
-#export PROG_PATH=$HOME/superAE/src/sae/training_program.py
-if false; then
-python -m sae.training_program \
+apptainer run \
+  --bind /research/groups/fortino/teemu/MODAE_data:/data \
+  --bind /research/groups/fortino/teemu/MODAE_output:/output \
+  modae.sif \
     -l mrna \
     -o $NAME \
     -p $SAVE_PATH \
@@ -46,7 +44,7 @@ python -m sae.training_program \
     --classifier \
     --data_var_cutoff_rank=-1 \
     --serialize_data \
-    --patient_expression_root_dir=$PROJ_PATH/tcga/pan_cancer/data_full/ \
+    --patient_expression_root_dir=$DATA_PATH/tcga/ \
     --patient_expression_cancer_list=$CANCER_LIST \
     --patient_expression_file_name=mrna.csv.gz \
     --patient_expression_sample_file=sample_info.csv.gz \
@@ -64,7 +62,7 @@ python -m sae.training_program \
     --patient_survival_time_col=OS.time \
     --patient_survival_covar_cols=age_at_initial_pathologic_diagnosis \
     --patient_survival_covar_onehot=0 \
-    --cell_line_expression_root_dir=$PROJ_PATH/ccle/ \
+    --cell_line_expression_root_dir=$DATA_PATH/ccle/ \
     --cell_line_expression_file=CCLE_expression.csv \
     --cell_line_gene_mapping_file=CCLE_gene_mapping.csv \
     --cell_line_expression_mean_cut=1. \
@@ -73,7 +71,7 @@ python -m sae.training_program \
     --cell_line_filter_mapping_file=$FILTER_FILE \
     --cell_line_filter_mapping_column=$FILTER_COLUMN \
     --cell_line_filter_inclusion_list=$FILTER_INCLUDE \
-    --cell_line_drug_response_root_dir=$PROJ_PATH/drug_response_dataset/ \
+    --cell_line_drug_response_root_dir=$DATA_PATH/drug_sensitivity_xia/ \
     --cell_line_drug_response_file=xia_ctrp_screen_dss.csv.gz \
     --cell_line_drug_response_row_info_file=xia_ctrp_screen_info.csv.gz \
     --cell_line_drug_response_row_info_sample_col=CELL \
@@ -100,7 +98,7 @@ python -m sae.training_program \
     --classifier \
     --data_var_cutoff_rank=-1 \
     --serialize_data \
-    --patient_expression_root_dir=$PROJ_PATH/tcga/pan_cancer/data_full/ \
+    --patient_expression_root_dir=$DATA_PATH/tcga/ \
     --patient_expression_cancer_list=$CANCER_LIST \
     --patient_expression_file_name=mrna.csv.gz \
     --patient_expression_sample_file=sample_info.csv.gz \
@@ -118,7 +116,7 @@ python -m sae.training_program \
     --patient_survival_time_col=OS.time \
     --patient_survival_covar_cols=age_at_initial_pathologic_diagnosis \
     --patient_survival_covar_onehot=0 \
-    --cell_line_expression_root_dir=$PROJ_PATH/ccle/ \
+    --cell_line_expression_root_dir=$DATA_PATH/ccle/ \
     --cell_line_expression_file=CCLE_expression.csv \
     --cell_line_gene_mapping_file=CCLE_gene_mapping.csv \
     --cell_line_expression_mean_cut=1. \
@@ -127,7 +125,7 @@ python -m sae.training_program \
     --cell_line_filter_mapping_file=$FILTER_FILE \
     --cell_line_filter_mapping_column=$FILTER_COLUMN \
     --cell_line_filter_inclusion_list=$FILTER_INCLUDE \
-    --cell_line_drug_response_root_dir=$PROJ_PATH/drug_response_dataset/ \
+    --cell_line_drug_response_root_dir=$DATA_PATH/drug_sensitivity_xia/ \
     --cell_line_drug_response_file=xia_ctrp_screen_dss.csv.gz \
     --cell_line_drug_response_row_info_file=xia_ctrp_screen_info.csv.gz \
     --cell_line_drug_response_row_info_sample_col=CELL \
@@ -154,7 +152,7 @@ python -m sae.training_program \
     --classifier \
     --data_var_cutoff_rank=-1 \
     --serialize_data \
-    --patient_expression_root_dir=$PROJ_PATH/tcga/pan_cancer/data_full/ \
+    --patient_expression_root_dir=$DATA_PATH/tcga/ \
     --patient_expression_cancer_list=$CANCER_LIST \
     --patient_expression_file_name=mrna.csv.gz \
     --patient_expression_sample_file=sample_info.csv.gz \
@@ -172,7 +170,7 @@ python -m sae.training_program \
     --patient_survival_time_col=OS.time \
     --patient_survival_covar_cols=age_at_initial_pathologic_diagnosis \
     --patient_survival_covar_onehot=0 \
-    --cell_line_expression_root_dir=$PROJ_PATH/ccle/ \
+    --cell_line_expression_root_dir=$DATA_PATH/ccle/ \
     --cell_line_expression_file=CCLE_expression.csv \
     --cell_line_gene_mapping_file=CCLE_gene_mapping.csv \
     --cell_line_expression_mean_cut=1. \
@@ -181,7 +179,7 @@ python -m sae.training_program \
     --cell_line_filter_mapping_file=$FILTER_FILE \
     --cell_line_filter_mapping_column=$FILTER_COLUMN \
     --cell_line_filter_inclusion_list=$FILTER_INCLUDE \
-    --cell_line_drug_response_root_dir=$PROJ_PATH/drug_response_dataset/ \
+    --cell_line_drug_response_root_dir=$DATA_PATH/drug_sensitivity_xia/ \
     --cell_line_drug_response_file=xia_ctrp_screen_dss.csv.gz \
     --cell_line_drug_response_row_info_file=xia_ctrp_screen_info.csv.gz \
     --cell_line_drug_response_row_info_sample_col=CELL \
@@ -209,7 +207,7 @@ python -m sae.training_program \
     --classifier \
     --data_var_cutoff_rank=-1 \
     --serialize_data \
-    --patient_expression_root_dir=$PROJ_PATH/tcga/pan_cancer/data_full/ \
+    --patient_expression_root_dir=$DATA_PATH/tcga/ \
     --patient_expression_cancer_list=$CANCER_LIST \
     --patient_expression_file_name=mrna.csv.gz \
     --patient_expression_sample_file=sample_info.csv.gz \
@@ -227,7 +225,7 @@ python -m sae.training_program \
     --patient_survival_time_col=OS.time \
     --patient_survival_covar_cols=age_at_initial_pathologic_diagnosis \
     --patient_survival_covar_onehot=0 \
-    --cell_line_expression_root_dir=$PROJ_PATH/ccle/ \
+    --cell_line_expression_root_dir=$DATA_PATH/ccle/ \
     --cell_line_expression_file=CCLE_expression.csv \
     --cell_line_gene_mapping_file=CCLE_gene_mapping.csv \
     --cell_line_expression_mean_cut=1. \
@@ -236,7 +234,7 @@ python -m sae.training_program \
     --cell_line_filter_mapping_file=$FILTER_FILE \
     --cell_line_filter_mapping_column=$FILTER_COLUMN \
     --cell_line_filter_inclusion_list=$FILTER_INCLUDE \
-    --cell_line_drug_response_root_dir=$PROJ_PATH/drug_response_dataset/ \
+    --cell_line_drug_response_root_dir=$DATA_PATH/drug_sensitivity_xia/ \
     --cell_line_drug_response_file=xia_ctrp_screen_dss.csv.gz \
     --cell_line_drug_response_row_info_file=xia_ctrp_screen_info.csv.gz \
     --cell_line_drug_response_row_info_sample_col=CELL \
@@ -263,7 +261,7 @@ python -m sae.training_program \
     --classifier \
     --data_var_cutoff_rank=-1 \
     --serialize_data \
-    --patient_expression_root_dir=$PROJ_PATH/tcga/pan_cancer/data_full/ \
+    --patient_expression_root_dir=$DATA_PATH/tcga/ \
     --patient_expression_cancer_list=$CANCER_LIST \
     --patient_expression_file_name=mrna.csv.gz \
     --patient_expression_sample_file=sample_info.csv.gz \
@@ -281,7 +279,7 @@ python -m sae.training_program \
     --patient_survival_time_col=OS.time \
     --patient_survival_covar_cols=age_at_initial_pathologic_diagnosis \
     --patient_survival_covar_onehot=0 \
-    --cell_line_expression_root_dir=$PROJ_PATH/ccle/ \
+    --cell_line_expression_root_dir=$DATA_PATH/ccle/ \
     --cell_line_expression_file=CCLE_expression.csv \
     --cell_line_gene_mapping_file=CCLE_gene_mapping.csv \
     --cell_line_expression_mean_cut=1. \
@@ -290,7 +288,7 @@ python -m sae.training_program \
     --cell_line_filter_mapping_file=$FILTER_FILE \
     --cell_line_filter_mapping_column=$FILTER_COLUMN \
     --cell_line_filter_inclusion_list=$FILTER_INCLUDE \
-    --cell_line_drug_response_root_dir=$PROJ_PATH/drug_response_dataset/ \
+    --cell_line_drug_response_root_dir=$DATA_PATH/drug_sensitivity_xia/ \
     --cell_line_drug_response_file=xia_ctrp_screen_dss.csv.gz \
     --cell_line_drug_response_row_info_file=xia_ctrp_screen_info.csv.gz \
     --cell_line_drug_response_row_info_sample_col=CELL \
@@ -316,7 +314,7 @@ python -m sae.training_program \
     --drug_response_model \
     --data_var_cutoff_rank=-1 \
     --serialize_data \
-    --patient_expression_root_dir=$PROJ_PATH/tcga/pan_cancer/data_full/ \
+    --patient_expression_root_dir=$DATA_PATH/tcga/ \
     --patient_expression_cancer_list=$CANCER_LIST \
     --patient_expression_file_name=mrna.csv.gz \
     --patient_expression_sample_file=sample_info.csv.gz \
@@ -332,14 +330,14 @@ python -m sae.training_program \
     --patient_survival_time_col=OS.time \
     --patient_survival_covar_cols=age_at_initial_pathologic_diagnosis \
     --patient_survival_covar_onehot=0 \
-    --cell_line_expression_root_dir=$PROJ_PATH/ccle/ \
+    --cell_line_expression_root_dir=$DATA_PATH/ccle/ \
     --cell_line_expression_file=CCLE_expression.csv \
     --cell_line_gene_mapping_file=CCLE_gene_mapping.csv \
     --cell_line_expression_mean_cut=1. \
     --cell_line_filter_mapping_file=$FILTER_FILE \
     --cell_line_filter_mapping_column=$FILTER_COLUMN \
     --cell_line_filter_inclusion_list=$FILTER_INCLUDE \
-    --cell_line_drug_response_root_dir=$PROJ_PATH/drug_response_dataset/ \
+    --cell_line_drug_response_root_dir=$DATA_PATH/drug_sensitivity_xia/ \
     --cell_line_drug_response_file=xia_ctrp_screen_dss.csv.gz \
     --cell_line_drug_response_row_info_file=xia_ctrp_screen_info.csv.gz \
     --cell_line_drug_response_row_info_sample_col=CELL \
@@ -364,7 +362,7 @@ python -m sae.training_program \
     --classifier \
     --data_var_cutoff_rank=-1 \
     --serialize_data \
-    --patient_expression_root_dir=$PROJ_PATH/tcga/pan_cancer/data_full/ \
+    --patient_expression_root_dir=$DATA_PATH/tcga/ \
     --patient_expression_cancer_list=$CANCER_LIST \
     --patient_expression_file_name=mrna.csv.gz \
     --patient_expression_sample_file=sample_info.csv.gz \
@@ -399,7 +397,7 @@ python -m sae.training_program \
     --classifier \
     --data_var_cutoff_rank=-1 \
     --serialize_data \
-    --cell_line_expression_root_dir=$PROJ_PATH/ccle/ \
+    --cell_line_expression_root_dir=$DATA_PATH/ccle/ \
     --cell_line_expression_file=CCLE_expression.csv \
     --cell_line_gene_mapping_file=CCLE_gene_mapping.csv \
     --cell_line_expression_mean_cut=1. \
@@ -408,7 +406,7 @@ python -m sae.training_program \
     --cell_line_filter_mapping_file=$FILTER_FILE \
     --cell_line_filter_mapping_column=$FILTER_COLUMN \
     --cell_line_filter_inclusion_list=$FILTER_INCLUDE \
-    --cell_line_drug_response_root_dir=$PROJ_PATH/drug_response_dataset/ \
+    --cell_line_drug_response_root_dir=$DATA_PATH/drug_sensitivity_xia/ \
     --cell_line_drug_response_file=xia_ctrp_screen_dss.csv.gz \
     --cell_line_drug_response_row_info_file=xia_ctrp_screen_info.csv.gz \
     --cell_line_drug_response_row_info_sample_col=CELL \

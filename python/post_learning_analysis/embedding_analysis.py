@@ -36,44 +36,14 @@ import warnings
 warnings.simplefilter(action='ignore', category=pd.errors.PerformanceWarning)
 
 #%% Data
-from sys import platform
-from socket import gethostname
-if gethostname() == 'teemu-pc':
-    base_path = '/home/teemu/research_work/'
-elif platform == 'linux':
-    base_path = '/research/work/rintala/'
-else:
-    base_path = '//research/workdir/'
+output_path = os.environ.get('MODAE_OUTPUT_PATH', default = None)
+if output_path is None:
+    raise ValueError('Please define MODAE_OUTPUT_PATH')
+data_root = os.environ.get('MODAE_DATA_PATH', default = None)
+if data_root is None:
+    raise ValueError('Please define MODAE_DATA_PATH')
 
-#res_path = base_path + 'superAE_HPO/20230821_random_search/brca_test_noclfilter/'
-#res_path = base_path + 'superAE_HPO/20231027_random_search/brca_test_noclfilter/'
-#res_path = base_path + 'superAE_HPO/20231101_random_search/brca_test_noclfilter/'
-#res_path = base_path + 'superAE_HPO/20231103_random_search/brca_test_noclfilter/'
-#res_path = base_path + 'superAE_HPO/random_search_231113/brca_test_noclfilter/'
-#res_path = base_path + 'superAE_HPO/231117_random_search/brca_test_noclfilter/'
-#res_path = base_path + 'superAE_HPO/20231120_random_search/brca_test_noclfilter/'
-#res_path = base_path + 'superAE_HPO/20231121_random_search/brca_test_noclfilter/'
-#res_path = base_path + 'superAE_HPO/20231122_random_search/scanb_test_noclfilter/'
-#res_path = base_path + 'superAE_HPO/20231124_random_search/pancan_test/'
-#res_path = base_path + 'superAE_HPO/20231128_random_search/brca_test_noclfilter/'
-#res_path = base_path + 'superAE_HPO/20231129_random_search/brca_test_noclfilter/'
-#res_path = base_path + 'superAE_HPO/20231130_random_search_nostandard/brca_test_noclfilter/'
-#res_path = base_path + 'superAE_HPO/20231201_random_search/brca_test_noclfilter/'
-#res_path = base_path + 'superAE_HPO/20231201_random_search/pancan_test/'
-#res_path = base_path + 'superAE_HPO/20231218_random_search/brca_test_noclfilter/'
-#res_path = base_path + 'superAE_HPO/20231218_random_search_relu/brca_test_noclfilter/'
-#res_path = base_path + 'superAE_HPO/20231219_random_search/brca_test_noclfilter/'
-#res_path = base_path + 'superAE_HPO/20231219_random_search_relu/brca_test_noclfilter/'
-#res_path = base_path + 'superAE_HPO/20231219_random_search_variational/brca_test_noclfilter/'
-#res_path = base_path + 'superAE_HPO/20231219_random_search_variational_relu/brca_test_noclfilter/'
-#res_path = base_path + 'superAE_HPO/20231220_random_search/brca_test_noclfilter/'
-#res_path = base_path + 'superAE_HPO/20231220_random_search_no_joint/brca_test_noclfilter/'
-#res_path = base_path + 'superAE_HPO/20231221_random_search/brca_test_noclfilter/'
-#res_path = base_path + 'superAE_HPO/20231221_random_search_no_joint/brca_test_noclfilter/'
-#res_path = base_path + 'superAE_HPO/20240103_random_search/brca_test_noclfilter/'
-#res_path = base_path + 'superAE_HPO/20240108_random_search/brca_test_noclfilter/'
-#res_path = base_path + 'superAE_HPO/20240115_random_search/brca_test_noclfilter/'
-res_path = base_path + 'superAE_HPO/20240118_random_search/brca_test_noclfilter/'
+res_path = f"{output_path}20250410_random_search/pancan_test/"
 
 embedding_files = glob.glob(res_path + '*test_cv_*embeddings*.csv.gz')
 prediction_files = glob.glob(res_path + '*test_cv_*predictions*.csv.gz')
@@ -96,29 +66,22 @@ def neighborhood_preds_stnr(preds, neighbor_mat_a, neighbor_mat_b):
     return stnr
 
 #%% Measured data
-if platform == 'linux':
-    patient_expression_root_dir = '/research/work/rintala/tcga/pan_cancer/data_full/'
-    cell_line_expression_root_dir = '/research/users/rintala/ccle/'
-    cell_line_drug_response_root_dir = '/research/users/rintala/ctrp/'
-else:
-    patient_expression_root_dir = '//research/workdir/tcga/pan_cancer/data_full/'
-    cell_line_expression_root_dir = '//research/rintala/ccle/'
-    cell_line_drug_response_root_dir = '//research/rintala/ctrp/'
-if False:
-    patient_expression_root_dir = '/home/teemu/research_work/tcga/pan_cancer/data_full/'
-    cell_line_expression_root_dir = '/home/teemu/research/ccle/'
-    cell_line_drug_response_root_dir = '/home/teemu/research/ctrp/'
-
 import re
 date = int(re.search('[0-9]+', res_path).group(0))
 drug_response_scaling =  date == 20231219
 
 if re.search('brca', res_path) is not None:
     from dataset_collections import get_tcga_brca_ctrp_ccle_full
-    data_dict = get_tcga_brca_ctrp_ccle_full(home = False, drug_response_maxscale = drug_response_scaling)
+    data_dict = get_tcga_brca_ctrp_ccle_full(
+        data_root = data_root, 
+        drug_response_maxscale = drug_response_scaling
+    )
 elif re.search('pancan', res_path) is not None:
     from dataset_collections import get_tcga_pancan_ctrp_ccle_solid
-    data_dict = get_tcga_pancan_ctrp_ccle_solid(home = False, drug_response_maxscale = drug_response_scaling)
+    data_dict = get_tcga_pancan_ctrp_ccle_solid(
+        data_root = data_root, 
+        drug_response_maxscale = drug_response_scaling
+    )
 
 #%% Preparation
 
@@ -158,10 +121,6 @@ cl_variable_table = pd.DataFrame(
 cl_variable_table_binned = copy(cl_variable_table)
 for col in data_dict['dr_table_cols']:
     bin_variable(cl_variable_table_binned, col, 2)
-if False:
-    with open(f"{cell_line_drug_response_root_dir}drug_names.txt", 'w') as f:
-        for i in data_dict['dr_table_cols']:
-            f.writelines(i + '\n')
 
 def neighborhood_preds_stnr(preds, neighbor_mat_a, neighbor_mat_b):
     a_mean = np.mean(preds[neighbor_mat_a,:], axis = 1)

@@ -22,48 +22,11 @@ from sys import platform
 from copy import copy
 
 #%%
-from sys import platform
-from socket import gethostname
-if gethostname() == 'teemu-pc':
-    base_path = '/home/teemu/research_work/superAE_HPO/'
-    home = True
-elif platform == 'linux':
-    base_path = '/research/work/rintala/superAE_HPO/'
-    home = False
-else:
-    base_path = '//research/workdir/superAE_HPO/'
-    home = False
+output_path = os.environ.get('MODAE_OUTPUT_PATH', default = None)
+if output_path is None:
+    raise ValueError('Please define MODAE_OUTPUT_PATH')
 
-#res_dir = base_path + '20231027_random_search/brca_test_noclfilter/'
-#res_dir = base_path + '20231101_random_search/brca_test_noclfilter/'
-#res_dir = base_path + '20231103_random_search/brca_test_noclfilter/'
-#res_dir = base_path + 'random_search_231113/brca_test_noclfilter/'
-#res_dir = base_path + '231117_random_search/brca_test_noclfilter/'
-#res_dir = base_path + '20231120_random_search/brca_test_noclfilter/'
-#res_dir = base_path + '20231121_random_search/brca_test_noclfilter/'
-#res_dir = base_path + '20231122_random_search/scanb_test_noclfilter/'
-#res_dir = base_path + '20231128_random_search/brca_test_noclfilter/'
-#res_dir = base_path + '20231201_random_search/pancan_test/'
-#res_path = base_path + '20240124_random_search/brca_test_noclfilter_alternative/'
-#res_path = base_path + '20240125_random_search/brca_test_noclfilter/'
-#res_path = base_path + '20240125_random_search/brca_test_noclfilter_nopre/'
-#res_path = base_path + '20240206_random_search/brca_test_noclfilter/'
-#res_path = base_path + '20240208_random_search/brca_test_noclfilter/'
-#res_path = base_path + '20240211_random_search/brca_test_noclfilter/'
-#res_path = base_path + '20250110_random_search/pancan_test/'
-#res_path = base_path + '20250117_random_search/pancan_test/'
-#res_path = base_path + '20250121_random_search/pancan_test/'
-#res_path = base_path + '20250124_random_search/pancan_test/'
-#res_path = base_path + '20250202_random_search/pancan_test/'
-#res_path = base_path + '20250205_random_search/scanb_test_noclfilter/'
-#res_path = base_path + '20250207_random_search/pancan_test/'
-#res_path = base_path + '20250216_random_search/pancan_test/'
-#res_path = base_path + '20250217_random_search/pancan_test/'
-#res_path = base_path + '20250219_random_search/pancan_test/'
-#res_path = base_path + '20250223_random_search/pancan_test/'
-#res_path = base_path + '20250506_random_search/pancan_test/'
-#res_path = base_path + '20250520_random_search/pancan_test/'
-res_path = base_path + '20250603_random_search/pancan_test/'
+res_path = f"{output_path}20250410_random_search/pancan_test/"
 
 #%%
 

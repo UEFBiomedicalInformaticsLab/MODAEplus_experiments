@@ -146,6 +146,7 @@ def nested_train_eval_drugwise(
                 index = pd.RangeIndex(0,1)))
     
     if return_predictions:
+        # TODO: implement prediction returns
         pass
     
     cv_results_df = pd.concat(cv_results, axis = 0)

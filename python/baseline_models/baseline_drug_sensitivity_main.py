@@ -60,16 +60,32 @@ def eval_genes(X, y, gene_lists, dr_model):
     return drij_r2
 
 #%% Main
-def main(kwargs):
-    #kwargs = {'root_dir' : '/home/teemu/research_work/drug_response_dataset/', 'drug_features' : '', 'response_sources' : 'CTRP', 'target' : 'AAC1', 'threads' : 8, 'use_pca' : True, 'pca_npc' : 10, 'model' : 'elasticnet', 'old_data' : False}
-    #kwargs = {'root_dir' : '/research/work/rintala/drug_response_dataset/', 'drug_features' : '', 'response_sources' : 'CTRP', 'target' : 'AAC1', 'threads' : 8, 'use_pca' : True, 'pca_npc' : 10, 'model' : 'elasticnet', 'old_data' : False}
-    #kwargs = {'cl_exp_root' : '//research/workdir/ccle/', 'cl_dr_root' : '//research/workdir/ctrp/'}
-    #kwargs = {'cl_exp_root' : '/research/work/rintala/ccle/', 'cl_dr_root' : '/research/work/rintala/ctrp/'}
-    #kwargs = {'cl_exp_root' : '/home/teemu/research_work/ccle/', 'cl_dr_root' : '/home/teemu/research_work/ctrp/'}
-    os.makedirs(kwargs['root_dir'], exist_ok=True)
-    if kwargs['identical_data']:
+def main(
+        root_dir,
+        cl_exp_root = None, 
+        cl_dr_root = None, 
+        identical_data = False,
+        old_data = False, 
+        gene_preselection = False, 
+        drug_features = '', 
+        response_sources = 'CTRP', 
+        feature_selection_only = False,
+        multivariate_fs = False, 
+        fs_n_features = 5000, 
+        threads = 1, 
+        target = 'AAC1', 
+        result_file = '',
+        standardize = False, 
+        use_pca = False, 
+        pca_npc = 100, 
+        model = 'elasticnet'
+):
+    os.makedirs(root_dir, exist_ok=True)
+    if identical_data:
         data_dict_combined = get_tcga_brca_ctrp_ccle_full(
-            home = False, gene_preselection = kwargs['gene_preselection'])
+            home = False, 
+            gene_preselection = gene_preselection
+        )
         ind = np.argwhere(data_dict_combined['dr_table_mask'])
         ccle_ids = data_dict_combined['cl_exp_rows']
         drug_ids = data_dict_combined['dr_table_cols']
@@ -83,22 +99,18 @@ def main(kwargs):
             'AAC' : data_dict_combined['dr_table'][ind[:,0], ind[:,1]]
         })
         data_dict = {'X_key' : key_df, 'cl_rnaseq' : cl_exp_df}
-    elif kwargs['old_data']:
+    elif old_data:
         data_dict = load_old_sensitivity_data(
-            cell_line_expression_root_dir = kwargs['cl_exp_root'], 
-            #cell_line_expression_file = kwargs['cl_exp_file'], 
-            cell_line_drug_response_root_dir = kwargs['cl_dr_root'], 
-            #cell_line_drug_response_file = kwargs['cl_dr_file'], 
-            #cell_line_drug_response_row_info_file = kwargs['cl_dr_row_info'],
-            #cell_line_drug_response_row_map_file = kwargs['cl_dr_row_map'])
-            )
+            cell_line_expression_root_dir = cl_exp_root, 
+            cell_line_drug_response_root_dir = cl_dr_root
+        )
     else:
         data_dict = load_sensitivity_data(
-            root_dir = kwargs['root_dir'], 
-            drug_features = [i.strip() for i in kwargs['drug_features'].split(',')], 
-            response_sources = [i.strip() for i in kwargs['response_sources'].split(',')])
+            root_dir = root_dir, 
+            drug_features = [i.strip() for i in drug_features.split(',')], 
+            response_sources = [i.strip() for i in response_sources.split(',')])
     
-    if kwargs['feature_selection_only']:
+    if feature_selection_only:
         fs_dict = {}
         key_df = data_dict['X_key']
         exp_mat = data_dict['cl_rnaseq']
@@ -107,9 +119,8 @@ def main(kwargs):
         res_col = 'AAC'
         drug_names = key_df[drug_col].unique()
         
-        if kwargs['multivariate_fs']:
-            #from sklearn.feature_selection import SequentialFeatureSelector
-            #sqfs = SequentialFeatureSelector(direction = "forward")
+        if multivariate_fs:
+            # Manual forward selection
             from sklearn.linear_model import ElasticNet
             from sklearn.preprocessing import StandardScaler
             from multiprocessing import Pool
@@ -130,13 +141,12 @@ def main(kwargs):
                 cl_ind = [exp_mat.index.get_loc(i) for i in res_df[clid_col]]
                 X_list.append(X_all[cl_ind, :])
                 y_list.append(res_df[res_col].to_numpy())
-            for i in np.arange(5000):
+            for i in np.arange(fs_n_features):
                 dri_r2 = []
                 gene_lists = [out_gene_list + [j] for j in in_gene_list]
-                with Pool(processes = kwargs['threads']) as mp:
-                    for res in mp.starmap(
-                            eval_genes, 
-                            [(X, y, gene_lists, copy(dr_model)) for X, y in zip(X_list, y_list)]):
+                with Pool(processes = threads) as mp:
+                    map_iterator = [(X, y, gene_lists, copy(dr_model)) for X, y in zip(X_list, y_list)]
+                    for res in mp.starmap(eval_genes, map_iterator):
                         dri_r2.append(res)
                 dri_r2 = np.array(dri_r2)
                 dri_r2_mean = dri_r2.mean(axis = 0)
@@ -147,12 +157,12 @@ def main(kwargs):
                     'gene' : [gene_names[j_max_gene]], 
                     'R2_mean' : [dri_r2_mean[j_max]], 
                 })
-                fn = f"{kwargs['root_dir']}forward_selection_all_drugs.csv"
+                fn = f"{root_dir}{result_file}"
                 res_df.to_csv(fn, mode = 'a')
         else:
             for dn in drug_names:
                 res_df = key_df.loc[key_df[drug_col] == dn,:]
-                with threadpool_limits(limits = kwargs['threads'], user_api = 'blas'):
+                with threadpool_limits(limits = threads, user_api = 'blas'):
                     f,p = f_regression(
                         exp_mat.loc[res_df[clid_col]].to_numpy(), 
                         res_df[res_col].to_numpy())
@@ -161,34 +171,33 @@ def main(kwargs):
             fs_all = np.concatenate([i for i in fs_dict.values()])
             fs_all_uq = np.unique(fs_all)
             fs_symbols = [re.sub(' \\([0-9]+\\)', '', i) for i in fs_all_uq]
-            with open(f"{kwargs['root_dir']}top10_univariate_genes_combined.txt", 'w') as f:
+            with open(f"{root_dir}top10_univariate_genes_combined.txt", 'w') as f:
                 f.writelines([f"{i}\n" for i in fs_symbols])
     
-    if kwargs['standardize']:
+    if standardize:
         scaler_instance = StandardScaler()
     else:
         scaler_instance = None
-    if kwargs['use_pca']:
-        pca_instance = PCA(n_components = kwargs['pca_npc'], whiten = True)
+    if use_pca:
+        pca_instance = PCA(n_components = pca_npc, whiten = True)
     else:
         pca_instance = None
     
-    if kwargs['model'] == 'elasticnet':
+    if model == 'elasticnet':
         model = ElasticNet(max_iter = 100, random_state = 2)
         param_grid = {
             'alpha' : 10**np.linspace(-3, 0, 11), 
             'l1_ratio' : np.power(np.linspace(0.1**4, 0.99**4, 11), 1./4.)}
-    elif kwargs['model'] == 'fs_elasticnet':
+    elif model == 'fs_elasticnet':
         eln_model = ElasticNet(max_iter = 100, random_state = 2)
         model = Pipeline(steps = [
             ('fs', SelectKBest(score_func = f_regression)), 
-            #('scale', StandardScaler()),
             ('eln', eln_model)])
         param_grid = {
             'fs__k' : np.linspace(100, 1000, 3).astype('int64'), 
             'eln__alpha' : 10**np.linspace(-3, -1, 3), 
             'eln__l1_ratio' : np.power(np.linspace(0.1**4, 0.99**4, 3), 1./4.)}
-    elif kwargs['model'] == 'gbt':
+    elif model == 'gbt':
         param_grid = {
             'max_depth' : np.arange(3, 10), 
             'ccp_alpha' : 10**np.linspace(-3, 0, 4),
@@ -197,14 +206,13 @@ def main(kwargs):
             n_estimators = 200, 
             loss = 'squared_error',
             random_state = 2)
-    elif kwargs['model'] == 'fs_gbt':
+    elif model == 'fs_gbt':
         gbr_model = GradientBoostingRegressor(
             n_estimators = 200, 
             loss = 'squared_error',
             random_state = 2)
         model = Pipeline(steps = [
             ('fs', SelectKBest(score_func = f_regression)), 
-            #('scale', StandardScaler()),
             ('gbt', gbr_model)])
         param_grid = {
             'fs__k' : np.linspace(100, 1000, 3).astype('int64'), 
@@ -212,7 +220,7 @@ def main(kwargs):
             'gbt__ccp_alpha' : 10**np.linspace(-3, 0, 4), 
             'gbt__learning_rate' : np.power(np.linspace(0.1**4, 0.99**4, 3), 1./4.)}
     
-    if kwargs['old_data'] or kwargs['identical_data']:
+    if old_data or identical_data:
         res = nested_train_eval_drugwise(
             model = model, 
             param_grid = param_grid, 
@@ -221,53 +229,47 @@ def main(kwargs):
             drug_col = 'CTRP_TREAT_ID', 
             cell_col = 'CCLE_ID', 
             cl_exp_df = data_dict['cl_rnaseq'], 
-            #pca_instance = PCA(n_components = 100, svd_solver = 'arpack'), 
             scaler_instance = scaler_instance, 
             pca_instance = pca_instance, 
             cv_outer = GroupKFold(n_splits = 5), 
             cv_inner = GroupKFold(n_splits = 5), 
             group_col = 'cell', 
-            thread_limit = kwargs['threads'])
+            thread_limit = threads)
         res['target'] = 'aac_old'
     else:
         res = nested_train_eval_drugwise(
             model = model, 
             param_grid = param_grid, 
             key_df = data_dict['X_key'], 
-            y_col = kwargs['target'], 
+            y_col = target, 
             drug_col = 'DRUG', 
             cell_col = 'CELL', 
             cl_exp_df = data_dict['cl_rnaseq'], 
-            #pca_instance = PCA(n_components = 100, svd_solver = 'arpack'), 
             scaler_instance = scaler_instance, 
             pca_instance = pca_instance, 
             cv_outer = GroupKFold(n_splits = 5), 
             cv_inner = GroupKFold(n_splits = 5), 
             group_col = 'cell', 
-            thread_limit = kwargs['threads'])
-        res['target'] = kwargs['target']
+            thread_limit = threads)
+        res['target'] = target
     
-    res.to_csv(kwargs['root_dir'] + kwargs['result_file'])
+    res.to_csv(f"{root_dir}{result_file}")
 
 if __name__ == '__main__':
     desc_str = 'Command line tool for evaluating several drug sensitivity models. \
     \
     Uses data from Xia et al. 2021 study and models from scikit-learn. '
     #%% Parse command line arguments
-    parser = argparse.ArgumentParser(prog = 'Baseline drug sensitivity model evaluation', description = desc_str)
+    parser = argparse.ArgumentParser(
+        prog = 'Baseline drug sensitivity model evaluation', 
+        description = desc_str
+    )
     parser.add_argument('--root_dir', type = str, default = '')
     parser.add_argument('--result_file', type = str, default = '')
     parser.add_argument('--old_data', action = 'store_true')
     parser.add_argument('--identical_data', action = 'store_true')
     parser.add_argument('--gene_preselection', action = 'store_true')
     parser.add_argument('--multivariate_fs', action = 'store_true')
-    #parser.add_argument('--cl_exp_root', type = str, default = '')
-    #parser.add_argument('--cl_exp_file', type = str, default = '')
-    #parser.add_argument('--cl_dr_root', type = str, default = '')
-    #parser.add_argument('--cl_dr_file', type = str, default = '')
-    #parser.add_argument('--cl_dr_row_info', type = str, default = '')
-    #parser.add_argument('--cl_dr_row_map', type = str, default = '')
-    parser.add_argument('--drug_features', type = str, default = '')
     parser.add_argument('--response_sources', type = str, default = 'CTRP')
     parser.add_argument('--standardize', action = 'store_true')
     parser.add_argument('--use_pca', action = 'store_true')
@@ -279,4 +281,4 @@ if __name__ == '__main__':
     
     kwargs = parser.parse_args()
     
-    main(vars(kwargs))
+    main(**vars(kwargs))

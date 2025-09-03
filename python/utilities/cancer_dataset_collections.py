@@ -19,7 +19,7 @@ def get_tcga_brca_ctrp_ccle_full(
         drug_response_maxscale = False, 
         tissue_classifier = False, 
         include_metas_labels = False):
-    patient_expression_root_dir = f"{data_root}tcga/pan_cancer/data_full/"
+    patient_expression_root_dir = f"{data_root}tcga/"
     cell_line_expression_root_dir = f"{data_root}ccle/"
     cell_line_drug_response_root_dir = f"{data_root}ctrp/"
     
@@ -99,7 +99,7 @@ def get_tcga_pancan_ctrp_ccle_solid(
         drug_response_maxscale = False, 
         tissue_classifier = False, 
         include_metas_labels = False):
-    patient_expression_root_dir = f"{data_root}tcga/pan_cancer/data_full/"
+    patient_expression_root_dir = f"{data_root}tcga/"
     cell_line_expression_root_dir = f"{data_root}ccle/"
     cell_line_drug_response_root_dir = f"{data_root}ctrp/"
     
@@ -159,7 +159,7 @@ def get_tcga_brca(
         standardize_early = False, 
         gene_preselection = False, 
         drug_response_maxscale = False):
-    patient_expression_root_dir = f"{data_root}tcga/pan_cancer/data_full/"
+    patient_expression_root_dir = f"{data_root}tcga/"
     
     if standardize_early:
         # Load all for standardization context
@@ -201,7 +201,7 @@ def get_tcga_brca_ccle_full(
         drug_response_maxscale = False, 
         tissue_classifier = False, 
         include_metas_labels = False):
-    patient_expression_root_dir = f"{data_root}tcga/pan_cancer/data_full/"
+    patient_expression_root_dir = f"{data_root}tcga/"
     cell_line_expression_root_dir = f"{data_root}ccle/"
     cell_line_drug_response_root_dir = f"{data_root}ccle/drug_sensitivity/"
     
@@ -282,7 +282,7 @@ def get_tcga_pancan_ccle_solid(
         drug_response_maxscale = False, 
         tissue_classifier = False, 
         include_metas_labels = False):
-    patient_expression_root_dir = f"{data_root}tcga/pan_cancer/data_full/"
+    patient_expression_root_dir = f"{data_root}tcga/"
     cell_line_expression_root_dir = f"{data_root}ccle/"
     cell_line_drug_response_root_dir = f"{data_root}ccle/drug_sensitivity/"
     
@@ -568,7 +568,7 @@ def get_bruna_pdtx(data_root = './'):
 
 #%% GAO PDX
 def get_gao_pdx(data_root = './'):
-    gao_path = f"{data_root}pdtc_gao/"
+    gao_path = f"{data_root}pan_cancer_pdx_gao/"
     
     gao_data_dict = complete_data_loader(
         cell_line_expression_root_dir = gao_path,
@@ -586,9 +586,9 @@ def get_xia_ctrp_data(
         tissue_classifier = False, 
         include_metas_labels = False, 
         exclude_metas_data = False):
-    patient_expression_root_dir = f"{data_root}tcga/pan_cancer/data_full/"
+    patient_expression_root_dir = f"{data_root}tcga/"
     cell_line_expression_root_dir = f"{data_root}ccle/"
-    cell_line_drug_response_root_dir = f"{data_root}drug_response_dataset/"
+    cell_line_drug_response_root_dir = f"{data_root}drug_sensitivity_xia/"
     
     patient_expression_cancer_list = 'ACC,BLCA,BRCA,CESC,CHOL,COAD,DLBC,ESCA,GBM,HNSC,KICH,KIRC,KIRP,LGG,LIHC,LUAD,LUSC,MESO,OV,PAAD,PCPG,PRAD,READ,SARC,SKCM,STAD,TGCT,THCA,THYM,UCEC,UCS,UVM'
     patient_expression_cancer_list = patient_expression_cancer_list.split(sep = ',')

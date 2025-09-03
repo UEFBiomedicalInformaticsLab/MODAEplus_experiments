@@ -81,12 +81,12 @@ predictions_df.value_counts('dataset')
 
 #%% TCGA and CCLE data
 
-patient_expression_root_dir = f"{data_root}tcga/pan_cancer/data_full/"
+patient_expression_root_dir = f"{data_root}tcga/"
 cell_line_expression_root_dir = f"{data_root}ccle/"
 cell_line_drug_response_root_dir = f"{data_root}ctrp/"
-xia_path = f"{data_root}drug_response_dataset/"
+xia_path = f"{data_root}drug_sensitivity_xia/"
 bruna_path = f"{data_root}breast_pdtc_bruna/"
-gao_path = f"{data_root}pdtc_gao/"
+gao_path = f"{data_root}pan_cancer_pdx_gao/"
 
 #%% CTRP or CCLE?
 '''

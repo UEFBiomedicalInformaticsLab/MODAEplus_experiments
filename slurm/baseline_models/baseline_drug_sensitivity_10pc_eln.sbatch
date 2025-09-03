@@ -12,10 +12,12 @@
 #SBATCH --mail-type=NONE
 
 
-apptainer exec --bind /research/groups/fortino/teemu/MODAR_data:/data \
+apptainer exec \
+  --bind /research/groups/fortino/teemu/MODAE_data:/data \
+  --bind /research/groups/fortino/teemu/MODAE_experiments:/scripts \
   modae.sif python \
   /scripts/python/baseline_models_dr/baseline_drug_sensitivity_main.py \
-    --root_dir=/research/work/rintala/drug_response_dataset/ \
+    --root_dir=/data/drug_sensitivity_xia/ \
     --result_file=pca10_elasticnet_aac_identical.csv \
     --identical_data \
     --standardize \

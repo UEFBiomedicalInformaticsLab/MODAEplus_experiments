@@ -7,13 +7,13 @@ if (output_dir == "") {
   stop("Please define the MODAE_OUTPUT_PATH environment variable.")
 }
 
-patient_expression_root_dir <- paste0(data_root, "tcga/pan_cancer/data_full/")
+patient_expression_root_dir <- paste0(data_root, "tcga/")
 cell_line_expression_root_dir <- paste0(data_root, "ccle/")
 cell_line_drug_response_root_dir <- paste0(data_root, "ctrp/")
 bruna_path <- paste0(data_root, "breast_pdtc_bruna/")
 mundi_path <- paste0(data_root, "drug_response_mundi/")
-xia_path <- paste0(data_root, "drug_response_dataset/")
-gao_path <- paste0(data_root, "pdtc_gao/")
+xia_path <- paste0(data_root, "drug_sensitivity_xia/")
+gao_path <- paste0(data_root, "pan_cancer_pdx_gao/")
 ccle_path <- paste0(data_root, "ccle/")
 ctrp_path <- paste0(data_root, "ctrp/")
 pgx_path <- paste0(data_root, "pharmacogx/")
@@ -26,7 +26,7 @@ scanb_path <- paste0(data_root, "scanb_preprocessed/")
 biomart_path <- paste0(data_root, "biomart_results/")
 celligner_path <- paste0(data_root, "Celligner/")
 codeae_path <- paste0(data_root, "CODE-AE-v1.0/")
-harkonen_path <- paste0(data_root, "lung_cancer/harkonen_2023/")
+harkonen_path <- paste0(data_root, "harkonen_2023/")
 
 ctrp_drug_target_file <- ""
 cell_line_oncotree_mapping_file <- "Model_oncotree.csv"

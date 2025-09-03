@@ -16,25 +16,15 @@
 #SBATCH --mail-type=NONE
 ##SBATCH --account=project_2005873
 #SBATCH --exclude=kudos[12]
-#sleep 5
 
-klist -l
-#export PROJ_PATH=/scratch/project_2005873
-export PROJ_PATH=/research/work/rintala
-export SAVE_PATH=$PROJ_PATH/superAE_HPO/20250410_random_search/
-touch ${SAVE_PATH}touch_file
+export SAVE_PATH=/output/20250410_random_search/
 
 export SAVE_PATH=${SAVE_PATH}pancan_ablation_test/
 export NAME=pancan_test_
 
-#module load tensorflow/2.13
-#source $HOME/tensorflow_23/bin/activate
-source /userapps/rintala/tensorflow/bin/activate
-export TF_CPP_MIN_LOG_LEVEL=2
-#export PROG_PATH=/projappl/project_2005873/superAE/src/sae/training_program.py
-#export PROG_PATH=$HOME/superAE/src/sae/training_program.py
-if false; then
-python -m sae.training_program \
+apptainer run \
+  --bind /research/groups/fortino/teemu/MODAE_output:/output \
+  modae.sif \
     -l mrna \
     -o $NAME \
     -p $SAVE_PATH \
