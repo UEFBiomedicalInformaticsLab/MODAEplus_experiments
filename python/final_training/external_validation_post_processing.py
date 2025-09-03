@@ -15,9 +15,13 @@ import importlib
 import sys
 import re
 
+script_path = os.environ.get('MODAE_SCRIPT_PATH', default = None)
+if script_path is None:
+    raise ValueError('Please define MODAE_SCRIPT_PATH')
+
 dsp_spec = importlib.util.spec_from_file_location(
     'dataset_processing', 
-    'datasets/cancer_dataset_processing.py'
+    f"{script_path}/python/utilities/cancer_dataset_processing.py"
 )
 dsp = importlib.util.module_from_spec(dsp_spec)
 sys.modules['dataset_processing'] = dsp

@@ -23,9 +23,13 @@ from sklearn.metrics.pairwise import pairwise_distances
 import sys
 import importlib.util
 
+script_path = os.environ.get('MODAE_SCRIPT_PATH', default = None)
+if script_path is None:
+    raise ValueError('Please define MODAE_SCRIPT_PATH')
+
 dsc_spec = importlib.util.spec_from_file_location(
     'dataset_collections', 
-    'datasets/cancer_dataset_collections.py'
+    f"{script_path}/python/utilities/cancer_dataset_collections.py"
 )
 dsc = importlib.util.module_from_spec(dsc_spec)
 sys.modules['dataset_collections'] = dsc
@@ -33,7 +37,7 @@ dsc_spec.loader.exec_module(dsc)
 
 et_spec = importlib.util.spec_from_file_location(
     'evaluation_tools', 
-    'utilities/evaluation_tools.py'
+    f"{script_path}/python/utilities/evaluation_tools.py"
 )
 et = importlib.util.module_from_spec(et_spec)
 sys.modules['evaluation_tools'] = et

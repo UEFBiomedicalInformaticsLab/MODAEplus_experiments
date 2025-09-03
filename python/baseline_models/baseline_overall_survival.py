@@ -7,12 +7,13 @@ import importlib.util
 import sys
 import os
 
-nthreads = 40
-pca_model = False
+script_path = os.environ.get('MODAE_SCRIPT_PATH', default = None)
+if script_path is None:
+    raise ValueError('Please define MODAE_SCRIPT_PATH')
 
 dsc_spec = importlib.util.spec_from_file_location(
     'dataset_collections', 
-    'datasets/cancer_dataset_collections.py'
+    f"{script_path}/python/utilities/cancer_dataset_collections.py"
 )
 dsc = importlib.util.module_from_spec(dsc_spec)
 sys.modules['dataset_collections'] = dsc
@@ -20,11 +21,14 @@ dsc_spec.loader.exec_module(dsc)
 
 bsm_spec = importlib.util.spec_from_file_location(
     'baseline_survival_models', 
-    'baseline_models_surv/baseline_survival_models.py'
+    f"{script_path}/python/baseline_models/baseline_survival_models.py"
 )
 bsm = importlib.util.module_from_spec(bsm_spec)
 sys.modules['baseline_survival_models'] = bsm
 bsm_spec.loader.exec_module(bsm)
+
+nthreads = 40
+pca_model = False
 
 #%% 
 output_path = os.environ.get('MODAE_OUTPUT_PATH', default = None)

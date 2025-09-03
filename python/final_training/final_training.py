@@ -14,9 +14,13 @@ from copy import copy
 import importlib.util
 import sys
 
+script_path = os.environ.get('MODAE_SCRIPT_PATH', default = None)
+if script_path is None:
+    raise ValueError('Please define MODAE_SCRIPT_PATH')
+
 dsc_spec = importlib.util.spec_from_file_location(
     'dataset_collections', 
-    'datasets/cancer_dataset_collections.py'
+    f"{script_path}/python/utilities/cancer_dataset_collections.py"
 )
 dsc = importlib.util.module_from_spec(dsc_spec)
 sys.modules['dataset_collections'] = dsc
@@ -24,7 +28,7 @@ dsc_spec.loader.exec_module(dsc)
 
 dsp_spec = importlib.util.spec_from_file_location(
     'dataset_processing', 
-    'datasets/cancer_dataset_processing.py'
+    f"{script_path}/python/utilities/cancer_dataset_processing.py"
 )
 dsp = importlib.util.module_from_spec(dsp_spec)
 sys.modules['dataset_processing'] = dsp
@@ -32,7 +36,7 @@ dsp_spec.loader.exec_module(dsp)
 
 et_spec = importlib.util.spec_from_file_location(
     'evaluation_tools', 
-    'utilities/evaluation_tools.py'
+    f"{script_path}/python/utilities/evaluation_tools.py"
 )
 et = importlib.util.module_from_spec(et_spec)
 sys.modules['evaluation_tools'] = et
@@ -40,7 +44,7 @@ et_spec.loader.exec_module(et)
 
 evp_spec = importlib.util.spec_from_file_location(
     'external_evaluation', 
-    'external_evaluation/external_validation_patients.py'
+    f"{script_path}/python/final_training/external_validation_patients.py"
 )
 evp = importlib.util.module_from_spec(evp_spec)
 sys.modules['external_validation_patients'] = evp

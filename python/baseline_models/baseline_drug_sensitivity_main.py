@@ -15,17 +15,30 @@ import pandas as pd
 import numpy as np
 import importlib
 
-dsc_spec = importlib.util.spec_from_file_location('dataset_collections', 'datasets/cancer_dataset_collections.py')
+script_path = os.environ.get('MODAE_SCRIPT_PATH', default = None)
+if script_path is None:
+    raise ValueError('Please define MODAE_SCRIPT_PATH')
+
+dsc_spec = importlib.util.spec_from_file_location(
+    'dataset_collections', 
+    f"{script_path}/python/utilities/cancer_dataset_collections.py"
+)
 dsc = importlib.util.module_from_spec(dsc_spec)
 sys.modules['dataset_collections'] = dsc
 dsc_spec.loader.exec_module(dsc)
 
-drd_spec = importlib.util.spec_from_file_location('baseline_dr_data', 'baseline_models_dr/baseline_drug_sensitivity_data.py')
+drd_spec = importlib.util.spec_from_file_location(
+    'baseline_dr_data', 
+    f"{script_path}/python/baseline_models/baseline_drug_sensitivity_data.py"
+)
 drd = importlib.util.module_from_spec(drd_spec)
 sys.modules['baseline_dr_data'] = drd
 drd_spec.loader.exec_module(drd)
 
-drm_spec = importlib.util.spec_from_file_location('baseline_dr_models', 'baseline_models_dr/baseline_drug_sensitivity_models.py')
+drm_spec = importlib.util.spec_from_file_location(
+    'baseline_dr_models', 
+    f"{script_path}/python/baseline_models/baseline_drug_sensitivity_models.py"
+)
 drm = importlib.util.module_from_spec(drm_spec)
 sys.modules['baseline_dr_models'] = drm
 drm_spec.loader.exec_module(drm)
