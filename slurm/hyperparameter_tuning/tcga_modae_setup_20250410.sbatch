@@ -4,15 +4,12 @@
 #SBATCH -n 1
 #SBATCH --cpus-per-task=1
 #SBATCH --partition=small
-##SBATCH --partition=serial
-##SBATCH --partition=gpu
 #SBATCH --mem=10G
 #SBATCH -t 0-00:15:00
-#SBATCH --output=/scratch/users/rintala/log/TCGA_SUPERAE_SETUP.%A.out
-#SBATCH --error=/scratch/users/rintala/log/TCGA_SUPERAE_SETUP.%A.err
-#SBATCH --mail-user=teemu.rintala@uef.fi
-#SBATCH --mail-type=NONE
-##SBATCH --account=project_2005873
+#SBATCH --output=log/TCGA_SUPERAE_SETUP.%A.out
+#SBATCH --error=log/TCGA_SUPERAE_SETUP.%A.err
+##SBATCH --mail-user=teemu.rintala@uef.fi
+##SBATCH --mail-type=NONE
 #SBATCH --exclude=kudos[12]
 
 export DATA_PATH=/data
@@ -71,7 +68,7 @@ export FILTER_INCLUDE=solid
 apptainer run \
   --bind /research/groups/fortino/teemu/MODAE_data:/data \
   --bind /research/groups/fortino/teemu/MODAE_output:/output \
-  modae.sif \
+  ../container/modae.sif \
     -l mrna \
     -o $NAME \
     -p $SAVE_PATH \

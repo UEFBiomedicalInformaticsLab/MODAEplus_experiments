@@ -4,15 +4,12 @@
 #SBATCH -n 1
 #SBATCH --cpus-per-task=1
 #SBATCH --partition=small
-##SBATCH --partition=serial
-##SBATCH --partition=gpu
 #SBATCH --mem=10G
 #SBATCH -t 0-00:15:00
-#SBATCH --output=/scratch/users/rintala/log/TCGA_SUPERAE_SETUP.%A.out
-#SBATCH --error=/scratch/users/rintala/log/TCGA_SUPERAE_SETUP.%A.err
-#SBATCH --mail-user=teemu.rintala@uef.fi
-#SBATCH --mail-type=NONE
-##SBATCH --account=project_2005873
+#SBATCH --output=log/TCGA_SUPERAE_SETUP.%A.out
+#SBATCH --error=log/TCGA_SUPERAE_SETUP.%A.err
+##SBATCH --mail-user=teemu.rintala@uef.fi
+##SBATCH --mail-type=NONE
 #SBATCH --exclude=kudos[12]
 
 export DATA_PATH=/data
@@ -35,7 +32,7 @@ export FILTER_INCLUDE=solid
 apptainer run \
   --bind /research/groups/fortino/teemu/MODAE_data:/data \
   --bind /research/groups/fortino/teemu/MODAE_output:/output \
-  modae.sif \
+  ../container/modae.sif \
     -l mrna \
     -o $NAME \
     -p $SAVE_PATH \
@@ -89,7 +86,10 @@ fi
 # No joint training
 if true; then
 export NAME=pancan_test_no_joint_
-python -m sae.training_program \
+apptainer run \
+  --bind /research/groups/fortino/teemu/MODAE_data:/data \
+  --bind /research/groups/fortino/teemu/MODAE_output:/output \
+  ../container/modae.sif \
     -l mrna \
     -o $NAME \
     -p $SAVE_PATH \
@@ -143,7 +143,10 @@ fi
 # No deconfounding penalty (but include private embeddings)
 if false; then
 export NAME=pancan_test_no_private_without_deconfounding_
-python -m sae.training_program \
+apptainer run \
+  --bind /research/groups/fortino/teemu/MODAE_data:/data \
+  --bind /research/groups/fortino/teemu/MODAE_output:/output \
+  ../container/modae.sif \
     -l mrna \
     -o $NAME \
     -p $SAVE_PATH \
@@ -194,11 +197,13 @@ python -m sae.training_program \
     2> >(grep -v " I " >&2)
 fi
 
-
 # No FAMO
 if false; then
 export NAME=pancan_test_no_famo_
-python -m sae.training_program \
+apptainer run \
+  --bind /research/groups/fortino/teemu/MODAE_data:/data \
+  --bind /research/groups/fortino/teemu/MODAE_output:/output \
+  ../container/modae.sif \
     -l mrna \
     -o $NAME \
     -p $SAVE_PATH \
@@ -252,7 +257,10 @@ fi
 # No deconfounding
 if false; then
 export NAME=pancan_test_no_deconfounding_
-python -m sae.training_program \
+apptainer run \
+  --bind /research/groups/fortino/teemu/MODAE_data:/data \
+  --bind /research/groups/fortino/teemu/MODAE_output:/output \
+  ../container/modae.sif \
     -l mrna \
     -o $NAME \
     -p $SAVE_PATH \
@@ -306,7 +314,10 @@ fi
 # No classifier
 if false; then
 export NAME=pancan_test_no_classifier_
-python -m sae.training_program \
+apptainer run \
+  --bind /research/groups/fortino/teemu/MODAE_data:/data \
+  --bind /research/groups/fortino/teemu/MODAE_output:/output \
+  ../container/modae.sif \
     -l mrna \
     -o $NAME \
     -p $SAVE_PATH \
@@ -351,10 +362,14 @@ python -m sae.training_program \
     --debug_data \
     2> >(grep -v " I " >&2)
 fi
+
 # Patient only
 if false; then
 export NAME=pancan_test_patient_only_
-python -m sae.training_program \
+apptainer run \
+  --bind /research/groups/fortino/teemu/MODAE_data:/data \
+  --bind /research/groups/fortino/teemu/MODAE_output:/output \
+  ../container/modae.sif \
     -l mrna \
     -o $NAME \
     -p $SAVE_PATH \
@@ -386,10 +401,14 @@ python -m sae.training_program \
     --debug_data \
     2> >(grep -v " I " >&2)
 fi
+
 # CL only
 if false; then
 export NAME=pancan_test_cl_only_
-python -m sae.training_program \
+apptainer run \
+  --bind /research/groups/fortino/teemu/MODAE_data:/data \
+  --bind /research/groups/fortino/teemu/MODAE_output:/output \
+  ../container/modae.sif \
     -l mrna \
     -o $NAME \
     -p $SAVE_PATH \

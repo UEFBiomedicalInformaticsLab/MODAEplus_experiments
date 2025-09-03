@@ -4,18 +4,17 @@
 #SBATCH -n 1
 #SBATCH --cpus-per-task=96
 #SBATCH --partition=small
-##SBATCH --partition=gpu
-##SBATCH --gres=gpu:1
 #SBATCH --mem=100G
 #SBATCH -t 3-00:00:00
-#SBATCH --output=/scratch/users/rintala/log/TCGA_SUPERAE_EVAL.%A.out
-#SBATCH --error=/scratch/users/rintala/log/TCGA_SUPERAE_EVAL.%A.err
-#SBATCH --mail-user=teemu.rintala@uef.fi
-#SBATCH --mail-type=NONE
+#SBATCH --output=log/TCGA_SUPERAE_EVAL.%A.out
+#SBATCH --error=log/TCGA_SUPERAE_EVAL.%A.err
+##SBATCH --mail-user=teemu.rintala@uef.fi
+##SBATCH --mail-type=NONE
 #SBATCH --exclude=kudos12
 
-#source $HOME/tensorflow_23/bin/activate
-source /userapps/rintala/tensorflow/bin/activate
-export TF_CPP_MIN_LOG_LEVEL=2
-
-python post_learning_analysis/batch_effect_analysis.py 2> >(grep -v " I " >&2)
+apptainer exec \
+  --bind /research/groups/fortino/teemu/MODAE_data:/data \
+  --bind $HOME/MODAEplus_experiments:/scripts \
+  ../container/modae.sif python \
+  /scripts/python/hyperparameter_evaluation/batch_effect_analysis.py \
+  2> >(grep -v " I " >&2)

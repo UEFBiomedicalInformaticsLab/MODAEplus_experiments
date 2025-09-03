@@ -12,6 +12,6 @@
 #SBATCH --mail-user=teemu.rintala@uef.fi
 #SBATCH --mail-type=NONE
 
-apptainer execute modae.sif python \
+apptainer execute ../container/modae.sif python \
     external_evaluation/external_validation.py \
     2> >(grep -v " I " >&2)

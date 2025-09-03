@@ -5,16 +5,13 @@
 #SBATCH --cpus-per-task=5
 ##SBATCH --partition=gpu
 #SBATCH --partition=small
-##SBATCH --array=1
 #SBATCH --mem=25G
-##SBATCH --gres=gpu:v100:1
 ##SBATCH --gres=gpu:1
 #SBATCH -t 3-00:00:00
-#SBATCH --output=/scratch/users/rintala/log/TCGA_SUPERAE.%A_%a.out
-#SBATCH --error=/scratch/users/rintala/log/TCGA_SUPERAE.%A_%a.err
-#SBATCH --mail-user=teemu.rintala@uef.fi
-#SBATCH --mail-type=NONE
-##SBATCH --account=project_2005873
+#SBATCH --output=log/TCGA_SUPERAE.%A.out
+#SBATCH --error=log/TCGA_SUPERAE.%A.err
+##SBATCH --mail-user=teemu.rintala@uef.fi
+##SBATCH --mail-type=NONE
 #SBATCH --exclude=kudos[12]
 
 export SAVE_PATH=/output/20250410_random_search/
@@ -101,7 +98,9 @@ fi
 
 if true; then
 export NAME=pancan_test_no_private_without_deconfounding_
-python -m sae.training_program \
+apptainer run \
+  --bind /research/groups/fortino/teemu/MODAE_output:/output \
+  modae.sif \
     -l mrna \
     -o $NAME \
     -p $SAVE_PATH \
@@ -178,7 +177,9 @@ fi
 
 if false; then
 export NAME=pancan_test_no_deconfounding_
-python -m sae.training_program \
+apptainer run \
+  --bind /research/groups/fortino/teemu/MODAE_output:/output \
+  modae.sif \
     -l mrna \
     -o $NAME \
     -p $SAVE_PATH \
@@ -255,7 +256,9 @@ fi
 
 if false; then
 export NAME=pancan_test_no_famo_
-python -m sae.training_program \
+apptainer run \
+  --bind /research/groups/fortino/teemu/MODAE_output:/output \
+  modae.sif \
     -l mrna \
     -o $NAME \
     -p $SAVE_PATH \
@@ -338,7 +341,9 @@ fi
 
 if false; then
 export NAME=pancan_test_no_classifier_
-python -m sae.training_program \
+apptainer run \
+  --bind /research/groups/fortino/teemu/MODAE_output:/output \
+  modae.sif \
     -l mrna \
     -o $NAME \
     -p $SAVE_PATH \
@@ -412,11 +417,6 @@ python -m sae.training_program \
     2> >(grep -v " I " >&2)
 fi
 
-
-
-
-
-export NAME=pancan_test_
 
 
 

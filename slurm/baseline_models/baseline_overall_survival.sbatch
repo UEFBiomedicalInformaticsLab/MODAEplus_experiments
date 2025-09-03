@@ -12,6 +12,8 @@
 #SBATCH --mail-type=NONE
 #SBATCH --exclude=kudos[4,12]
 
-#source $HOME/tensorflow_23/bin/activate 
-source /userapps/rintala/tensorflow/bin/activate
-python baseline_models_surv/baseline_overall_survival.py
+apptainer exec \
+  --bind /research/groups/fortino/teemu/MODAE_data:/data \
+  --bind $HOME/MODAEplus_experiments:/scripts \
+  ../container/modae.sif python \
+  /scripts/python/baseline_models//baseline_overall_survival.py

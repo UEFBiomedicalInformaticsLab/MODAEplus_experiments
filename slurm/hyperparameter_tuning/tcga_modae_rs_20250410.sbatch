@@ -5,16 +5,14 @@
 #SBATCH --cpus-per-task=5
 ##SBATCH --partition=gpu
 #SBATCH --partition=small
-#SBATCH --array=101-400%50
+#SBATCH --array=1-100%50
 #SBATCH --mem=25G
-##SBATCH --gres=gpu:v100:1
 ##SBATCH --gres=gpu:1
 #SBATCH -t 3-00:00:00
-#SBATCH --output=/scratch/users/rintala/log/TCGA_SUPERAE.%A_%a.out
-#SBATCH --error=/scratch/users/rintala/log/TCGA_SUPERAE.%A_%a.err
-#SBATCH --mail-user=teemu.rintala@uef.fi
-#SBATCH --mail-type=NONE
-##SBATCH --account=project_2005873
+#SBATCH --output=log/TCGA_SUPERAE.%A_%a.out
+#SBATCH --error=log/TCGA_SUPERAE.%A_%a.err
+##SBATCH --mail-user=teemu.rintala@uef.fi
+##SBATCH --mail-type=NONE
 #SBATCH --exclude=kudos[12]
 
 export SAVE_PATH=/output/20250410_random_search/
@@ -36,7 +34,7 @@ export NAME=pancan_test_
 
 apptainer run \
   --bind /research/groups/fortino/teemu/MODAE_output:/output \
-  modae.sif \
+  ../container/modae.sif \
     -l mrna \
     -o $NAME \
     -p $SAVE_PATH \
