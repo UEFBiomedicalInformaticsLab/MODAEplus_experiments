@@ -1,4 +1,8 @@
-source("../setup.R")
+script_root <- Sys.getenv("MODAE_SCRIPT_PATH")
+if (script_root == "") {
+  stop("Please define the MODAE_SCRIPT_PATH environment variable.")
+}
+source(paste0(script_root, "R/setup.R"))
 
 # MAF from https://doi.org/10.1016/j.cels.2018.03.002
 fn <- paste0(patient_expression_root_dir, "maf_full.csv.gz")

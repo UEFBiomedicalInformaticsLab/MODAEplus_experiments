@@ -1,5 +1,9 @@
+script_root <- Sys.getenv("MODAE_SCRIPT_PATH")
+if (script_root == "") {
+  stop("Please define the MODAE_SCRIPT_PATH environment variable.")
+}
+source(paste0(script_root, "R/setup.R"))
 library(ggplot2)
-source("../setup.R")
 
 fn <- paste0(ccle_path, "CCLE_RRBS_TSS_1kb_20180614.txt")
 tss_methylation <- readr::read_tsv(fn)

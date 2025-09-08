@@ -1,4 +1,8 @@
-source("../setup.R")
+script_root <- Sys.getenv("MODAE_SCRIPT_PATH")
+if (script_root == "") {
+  stop("Please define the MODAE_SCRIPT_PATH environment variable.")
+}
+source(paste0(script_root, "R/setup.R"))
 
 fn <- paste0(xia_path, "combined_cl_metadata")
 cl_meta <- read.table(fn, sep = "\t", header = TRUE)

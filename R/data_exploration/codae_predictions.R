@@ -1,4 +1,8 @@
-source("../setup.R")
+script_root <- Sys.getenv("MODAE_SCRIPT_PATH")
+if (script_root == "") {
+  stop("Please define the MODAE_SCRIPT_PATH environment variable.")
+}
+source(paste0(script_root, "R/setup.R"))
 
 codeae_data_path <- paste0(codeae_path, "data/preprocessed_dat/")
 fn <- paste0(codeae_data_path, "xena_samples.txt")

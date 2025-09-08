@@ -1,4 +1,9 @@
-source("../setup.R")
+script_root <- Sys.getenv("MODAE_SCRIPT_PATH")
+if (script_root == "") {
+  stop("Please define the MODAE_SCRIPT_PATH environment variable.")
+}
+source(paste0(script_root, "R/setup.R"))
+
 for (save_dir in save_dirs) {
   if(exists("var_list")) try(detach(var_list))
   var_list <- get_paths_and_parameters(save_dir, remove_incomplete = FALSE)

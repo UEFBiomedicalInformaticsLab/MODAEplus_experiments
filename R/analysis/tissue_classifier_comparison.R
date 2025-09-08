@@ -1,5 +1,9 @@
-source("../setup.R")
-source("comparison_function.R")
+script_root <- Sys.getenv("MODAE_SCRIPT_PATH")
+if (script_root == "") {
+  stop("Please define the MODAE_SCRIPT_PATH environment variable.")
+}
+source(paste0(script_root, "R/setup.R"))
+source(paste0(script_root, "R/analysis/comparison_function.R"))
 
 for (save_dir in save_dirs) {
   if(exists("var_list")) try(detach(var_list))

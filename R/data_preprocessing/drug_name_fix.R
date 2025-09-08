@@ -1,1 +1,0 @@
-drug_name_url <- "https://api.drugcomb.org/drugs" # JSON

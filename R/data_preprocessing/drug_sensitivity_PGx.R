@@ -1,4 +1,8 @@
-source("../setup.R")
+script_root <- Sys.getenv("MODAE_SCRIPT_PATH")
+if (script_root == "") {
+  stop("Please define the MODAE_SCRIPT_PATH environment variable.")
+}
+source(paste0(script_root, "R/setup.R"))
 
 CCLE <- PharmacoGx::downloadPSet("CCLE_2015", saveDir = ccle_path)
 PRISM <- PharmacoGx::downloadPSet("PRISM_2020", saveDir = ccle_path)

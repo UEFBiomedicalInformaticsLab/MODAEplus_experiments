@@ -1,6 +1,6 @@
 # MODAE experiments
 
-## Step 1 setup files (TODO: update URLs when published)
+## Step 1 setup files and environment (TODO: update URLs when published)
 
 ```
 git clone https://github.com/trintala/MODAEplus.git
@@ -8,6 +8,17 @@ git clone https://github.com/trintala/MODAEplus_experiments.git
 ```
 
 Download data from Zenodo (not uploaded at the moment, found in group folder).
+
+Note that the scripts require environmental variables that define paths to 
+data, scripts, and output. To keep the code portable and updateable, it is 
+recommended to use these variables instead of editing the scripts directly. 
+They can be setup like this:
+
+```
+export MODAE_DATA_PATH=$HOME/MODAE_data/
+export MODAE_SCRIPT_PATH=$HOME/MODAEplus_experiments/
+export MODAE_OUTPUT_PATH=$HOME/MODAE_output/
+```
 
 ## Step 2 build Apptainer container (optional)
 

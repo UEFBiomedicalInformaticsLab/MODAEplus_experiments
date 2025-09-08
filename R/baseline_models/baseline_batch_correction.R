@@ -1,5 +1,9 @@
+script_root <- Sys.getenv("MODAE_SCRIPT_PATH")
+if (script_root == "") {
+  stop("Please define the MODAE_SCRIPT_PATH environment variable.")
+}
+source(paste0(script_root, "R/setup.R"))
 library(ggplot2)
-source("../setup.R")
 
 # Get pan-cancer mrna dataset from one of the external validation runs
 fn <- paste0(base_dir, "20250202_random_search/pancan_test/external_evaluation/internal/cl_mrna.csv.gz")

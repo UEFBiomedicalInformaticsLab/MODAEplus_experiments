@@ -1,3 +1,9 @@
+script_root <- Sys.getenv("MODAE_SCRIPT_PATH")
+if (script_root == "") {
+  stop("Please define the MODAE_SCRIPT_PATH environment variable.")
+}
+source(paste0(script_root, "R/setup.R"))
+
 path <- paste0(data_root, "BRCA/SCANB/")
 int_path <- paste0(data_root, "scanb_preprocessed/")
 path <- paste0(

@@ -1,7 +1,11 @@
-source("../setup.R")
-#Sys.setenv(LD_LIBRARY_PATH = paste0("/home/teemu/JAGS/lib:", Sys.getenv("LD_LIBRARY_PATH")))
-#Sys.setenv(PKG_CONFIG_PATH = paste0("/home/teemu/JAGS/lib/pkgconfig:", Sys.getenv("PKG_CONFIG_PATH")))
-#Sys.setenv(JAGS_PREFIX = "/home/teemu/JAGS")
+script_root <- Sys.getenv("MODAE_SCRIPT_PATH")
+if (script_root == "") {
+  stop("Please define the MODAE_SCRIPT_PATH environment variable.")
+}
+source(paste0(script_root, "R/setup.R"))
+#Sys.setenv(LD_LIBRARY_PATH = paste0("~/JAGS/lib:", Sys.getenv("LD_LIBRARY_PATH")))
+#Sys.setenv(PKG_CONFIG_PATH = paste0("~/JAGS/lib/pkgconfig:", Sys.getenv("PKG_CONFIG_PATH")))
+#Sys.setenv(JAGS_PREFIX = "~/JAGS")
 #install.packages("rjags", configure.args="--with-jags-prefix")
 
 for (save_dir in save_dirs) {
