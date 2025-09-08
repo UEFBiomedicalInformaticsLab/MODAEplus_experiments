@@ -111,41 +111,59 @@ for (save_dir in save_dirs) {
   rownames(best_patient_dr_predictions) <- best_patient_predictions[["X"]]
   ctrp_drugs <- get_ctrp_drugs(n_drugs = ncol(best_patient_dr_predictions))
   
-  mean_sens_df <- data.frame()
   # Cancerwise mean sensitivity
-  for (drugi in ctrp_drugs) {
-    sensi <- best_patient_dr_predictions[
-      , 
-      which(tolower(ctrp_drugs) == tolower(drugi)), 
-      drop = FALSE
-    ]
-    sensi_mu <- mean(sensi[,1], na.rm = TRUE)
-    sensi_sd <- sd(sensi[,1], na.rm = TRUE)
-    for (canceri in pan_cancer_types) {
-      pt_idx <- colnames(gex_list[[canceri]])[-1] # first col is gene id (rownames)
-      pt_idx <- gsub("\\.", "-", pt_idx)
-      pt_idx <- intersect(pt_idx, rownames(sensi))
-      
-      mean_sens_df <- rbind(
-        mean_sens_df, 
-        data.frame(
-          drug = drugi, 
-          cancer = canceri, 
-          global_sensitivity_mean = sensi_mu, 
-          global_sensitivity_sd = sensi_sd, 
-          cancer_sensitivity_mean = mean(sensi[pt_idx,1]), 
-          cancer_sensitivity_sd = sd(sensi[pt_idx,1])
+  fn <- paste0(
+    best_dr_res_path, 
+    "drug_target_expression/cancer_sensitivity_table.csv"
+  )
+  if (file.exists(fn)) {
+    mean_sens_df <- mean_sens_df <- readr::read_csv(fn)
+  } else {
+    mean_sens_df <- data.frame()
+    for (drugi in ctrp_drugs) {
+      sensi <- best_patient_dr_predictions[
+        , 
+        which(tolower(ctrp_drugs) == tolower(drugi)), 
+        drop = FALSE
+      ]
+      sensi_mu <- mean(sensi[,1], na.rm = TRUE)
+      sensi_sd <- sd(sensi[,1], na.rm = TRUE)
+      for (canceri in pan_cancer_types) {
+        pt_idx <- colnames(gex_list[[canceri]])[-1] # first col is gene id (rownames)
+        pt_idx <- gsub("\\.", "-", pt_idx)
+        pt_idx <- intersect(pt_idx, rownames(sensi))
+        
+        mean_sens_df <- rbind(
+          mean_sens_df, 
+          data.frame(
+            drug = drugi, 
+            cancer = canceri, 
+            global_sensitivity_mean = sensi_mu, 
+            global_sensitivity_sd = sensi_sd, 
+            cancer_sensitivity_mean = mean(sensi[pt_idx,1]), 
+            cancer_sensitivity_sd = sd(sensi[pt_idx,1])
+          )
         )
-      )
+      }
     }
+    dir.create(
+      paste0(best_dr_res_path, "drug_target_expression/"), 
+      recursive = TRUE
+    )
+    readr::write_csv(mean_sens_df, file = fn)
   }
-  dir.create(paste0(best_dr_res_path, "drug_target_expression/"), recursive = TRUE)
-  fn <- paste0(best_dr_res_path, "drug_target_expression/cancer_sensitivity_table.csv")
-  readr::write_csv(mean_sens_df, file = fn)
   
   # Drug targets
-  drug_target_sources <- c("drug_bank", "open_targets", "pharmgkb", "ctd_expr", "ctd_10int")[-4]
+  drug_target_sources <- c(
+    "drug_bank", 
+    "open_targets", 
+    "pharmgkb", 
+    "ctd_expr", 
+    "ctd_10int"
+  )[-4]
   
+  save_drug_target_figures <- TRUE
+  # Regression based associations (just correlation plots for now)
   for (drug_target_source in drug_target_sources) {
     drug_target_genes_json <- readLines(paste0(ctrp_path, drug_target_source, "_drug_target_genes.json"))
     drug_target_genes <- rjson::fromJSON(drug_target_genes_json)
@@ -154,7 +172,10 @@ for (save_dir in save_dirs) {
     ctrp_drugs_with_targets <- which(ctrp_drugs_adjusted %in% names(drug_target_genes))
     
     drug_target_expression_list <- list()
-    dir.create(paste0(best_dr_res_path, "drug_target_expression_regression/", drug_target_source), recursive = TRUE)
+    dir.create(
+      paste0(best_dr_res_path, "drug_target_expression_regression/", drug_target_source), 
+      recursive = TRUE
+    )
     
     for (drugi in ctrp_drugs_with_targets) {
       targetsi <- drug_target_genes[[ctrp_drugs_adjusted[drugi]]]
@@ -179,34 +200,45 @@ for (save_dir in save_dirs) {
           if (TRUE || tolower(ctrp_drugs[drugi]) %in% drugs_of_interest) {
             #png(paste0(best_dr_res_path, "drug_target_expression/", drug_target_source, "/", ctrp_drugs[drugi], ".png"), 
             #    width = plot_width, height = plot_height, res = plot_res, units = plot_units)
-            for (targeti in targetsi) {
-              mod1 <- betareg::betareg(sensitivity ~ log2(TPM+1):cancer + cancer, data = dplyr::filter(gex_df, gene == targeti))
-              mod2 <- brms::brm(
-                brms::bf(
-                  sensitivity ~ (1+log2(TPM+1) | cancer), 
-                  zi ~ (1 | cancer)
-                ), 
-                data = dplyr::filter(gex_df, gene == targeti), 
-                family = brms::zero_inflated_beta(), 
-                chains = 4, 
-                iter = 2000, 
-                warmup = 1000, 
-                cores = 10, 
-                seed = 0, 
-                backend = "rstan"
-              )
+            if (FALSE) {
+              # Beta regression for testing sensitivity ~ expression associations.
+              # Test code using heavy computation to account for zero-inflation
+              # in sensitity values. 
+              for (targeti in targetsi) {
+                mod1 <- betareg::betareg(sensitivity ~ log2(TPM+1):cancer + cancer, data = dplyr::filter(gex_df, gene == targeti))
+                mod2 <- brms::brm(
+                  brms::bf(
+                    sensitivity ~ (1+log2(TPM+1) | cancer), 
+                    zi ~ (1 | cancer)
+                  ), 
+                  data = dplyr::filter(gex_df, gene == targeti), 
+                  family = brms::zero_inflated_beta(), 
+                  chains = 4, 
+                  iter = 2000, 
+                  warmup = 1000, 
+                  cores = 10, 
+                  seed = 0, 
+                  backend = "rstan"
+                )
+              }
             }
             
             if (save_drug_target_figures) {
               save_figure_safe(
                 ggplot(
                   gex_df, 
-                  aes(x = log2(TPM+1), y = sensitivity, color = cancer)) + 
-                  geom_point(shape = 3) + theme_bw() + theme(axis.text.x = element_blank()) + 
+                  aes(x = log2(TPM+1), y = sensitivity, color = cancer)
+                ) + 
+                  geom_point(shape = 3) + 
+                  ggpubr::stat_cor(method = "pearson") + 
+                  theme_bw() + 
+                  theme(axis.text.x = element_blank()) + 
                   scale_color_manual(values = pals::kovesi.rainbow(length(pan_cancer_types))) + 
                   facet_wrap(gene ~ ., scales = "free_x"), 
                 png, 
-                paste0(best_dr_res_path, "drug_target_expression/", drug_target_source, "/", ctrp_drugs[drugi], ".png"), 
+                paste0(
+                  best_dr_res_path, "drug_target_expression_regression/", 
+                  drug_target_source, "/", ctrp_drugs[drugi], ".png"), 
                 width = plot_width, 
                 height = plot_height, 
                 res = plot_res, 
@@ -219,11 +251,7 @@ for (save_dir in save_dirs) {
     }
   }
   
-  
-  
   # Group based on predicted sensitivity
-  save_drug_target_figures <- TRUE
-  
   sens_func <- function(x) {
     if (FALSE) {
       sens_q <- quantile(x, probs = c(0.05, 0.95))
@@ -251,7 +279,10 @@ for (save_dir in save_dirs) {
     
     drug_target_expression_list <- list()
     cancer_drug_target_expression_list <- list()
-    dir.create(paste0(best_dr_res_path, "drug_target_expression/", drug_target_source), recursive = TRUE)
+    dir.create(
+      paste0(best_dr_res_path, "drug_target_expression/", drug_target_source), 
+      recursive = TRUE
+    )
     
     for (drugi in ctrp_drugs_with_targets) {
       targetsi <- drug_target_genes[[ctrp_drugs_adjusted[drugi]]]
