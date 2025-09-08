@@ -1,4 +1,8 @@
-source("../setup.R")
+script_root <- Sys.getenv("MODAE_SCRIPT_PATH")
+if (script_root == "") {
+  stop("Please define the MODAE_SCRIPT_PATH environment variable.")
+}
+source(paste0(script_root, "R/setup.R"))
 
 ctrdb_dirs <- dir(ctrdb_path)
 ctrdb_dirs <- ctrdb_dirs[-grep("data.tar", ctrdb_dirs)]
