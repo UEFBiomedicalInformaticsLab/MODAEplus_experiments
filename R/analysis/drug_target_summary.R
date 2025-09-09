@@ -107,7 +107,13 @@ for (save_dir in save_dirs) {
   )
   
   # Drug targets
-  drug_target_sources <- c("drug_bank", "open_targets", "pharmgkb", "ctd_expr", "ctd_10int")[-4]
+  drug_target_sources <- c(
+    "drug_bank", 
+    "open_targets", 
+    "pharmgkb", 
+    "ctd_expr", 
+    "ctd_10int"
+  )[-4]
   
   dt_path <- paste0(best_dr_res_path, "drug_target_expression/")
   target_res_list <- list()
