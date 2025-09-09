@@ -118,6 +118,8 @@ for (save_dir in save_dirs) {
   dt_path <- paste0(best_dr_res_path, "drug_target_expression/")
   target_res_list <- list()
   
+  sensitivity_filter <- FALSE
+  plot_drug_target_summaries <- TRUE
   for (filter_results in c(FALSE, TRUE)) {
     for (filter_indications in c(FALSE, TRUE)) {
       drug_target_res_list <- list()
@@ -163,11 +165,13 @@ for (save_dir in save_dirs) {
         cancer_drug_target_res_list[[i]][["target_source"]] <- i
         cancer_drug_target_res_list[[i]] <- na.omit(cancer_drug_target_res_list[[i]])
         if (filter_results) {
-          cancer_drug_target_res_list[[i]] <- dplyr::inner_join(
-            cancer_drug_target_res_list[[i]], 
-            mean_sens_filter_df, 
-            by = c("drug", "cancer")
-          )
+          if (sensitivity_filter) {
+            cancer_drug_target_res_list[[i]] <- dplyr::inner_join(
+              cancer_drug_target_res_list[[i]], 
+              mean_sens_filter_df, 
+              by = c("drug", "cancer")
+            )
+          }
           cancer_drug_target_res_list[[i]] <- dplyr::inner_join(
             cancer_drug_target_res_list[[i]], 
             dr_r2_best_filter, 
@@ -237,221 +241,223 @@ for (save_dir in save_dirs) {
       )
       
       # Tested across all cancers
-      p1 <- ggplot(
-        drug_target_res, 
-        aes(y = pmin(-log10(p_value), 5), 
-            x = target_source, 
-            color = target_source)
-      ) + 
-        ggbeeswarm::geom_beeswarm() +
-        scale_color_manual(values = pals::kovesi.rainbow(length(drug_target_sources))) + 
-        geom_hline(yintercept = -log10(0.05), color = "red") +
-        theme_bw() + 
-        facet_wrap(drug~.) + 
-        theme(
-          axis.text.x = element_blank(), #element_text(angle = 90, vjust = 0.5, hjust = 1), 
-          axis.title.x = element_blank()
+      if (plot_drug_target_summaries) {
+        p1 <- ggplot(
+          drug_target_res, 
+          aes(y = pmin(-log10(p_value), 5), 
+              x = target_source, 
+              color = target_source)
         ) + 
-        ggtitle("t-test p-value between pan-cancer sensitive and resistant groups' drug target expression")
-      
-      save_figure_safe(
-        p1, 
-        png, 
-        paste0(dt_path, res_str, "_drug_target_expression_pan_cancer_t_test.png"), 
-        width = plot_width*1.4*ifelse(filter_results | filter_indications, 1, 1.5), 
-        height = plot_width*ifelse(filter_results | filter_indications, 1, 1.5), 
-        res = plot_res, 
-        units = plot_units
-      )
-      
-      p1 <- ggplot(
-        drug_target_res, 
-        aes(y = abs(log2FC), 
-            x = target_source, 
-            color = target_source)
-      ) + 
-        ggbeeswarm::geom_beeswarm() +
-        scale_color_manual(values = pals::kovesi.rainbow(length(drug_target_sources))) + 
-        geom_hline(yintercept = log2(1.5), color = "red") +
-        theme_bw() + 
-        facet_wrap(drug~.) + 
-        theme(
-          axis.text.x = element_blank(), #element_text(angle = 90, vjust = 0.5, hjust = 1), 
-          axis.title.x = element_blank()
+          ggbeeswarm::geom_beeswarm() +
+          scale_color_manual(values = pals::kovesi.rainbow(length(drug_target_sources))) + 
+          geom_hline(yintercept = -log10(0.05), color = "red") +
+          theme_bw() + 
+          facet_wrap(drug~.) + 
+          theme(
+            axis.text.x = element_blank(), #element_text(angle = 90, vjust = 0.5, hjust = 1), 
+            axis.title.x = element_blank()
+          ) + 
+          ggtitle("t-test p-value between pan-cancer sensitive and resistant groups' drug target expression")
+        
+        save_figure_safe(
+          p1, 
+          png, 
+          paste0(dt_path, res_str, "_drug_target_expression_pan_cancer_t_test.png"), 
+          width = plot_width*1.4*ifelse(filter_results | filter_indications, 1, 1.5), 
+          height = plot_width*ifelse(filter_results | filter_indications, 1, 1.5), 
+          res = plot_res, 
+          units = plot_units
+        )
+        
+        p1 <- ggplot(
+          drug_target_res, 
+          aes(y = abs(log2FC), 
+              x = target_source, 
+              color = target_source)
         ) + 
-        ggtitle("effect-size between pan-cancer sensitive and resistant groups' drug target expression")
-      
-      save_figure_safe(
-        p1, 
-        png, 
-        paste0(dt_path, res_str, "_drug_target_expression_pan_cancer_effect_size.png"), 
-        width = plot_width*1.4*ifelse(filter_results | filter_indications, 1, 1.5), 
-        height = plot_width*ifelse(filter_results | filter_indications, 1, 1.5), 
-        res = plot_res, 
-        units = plot_units
-      )
-      
-      p1 <- ggplot(
-        drug_min_p, 
-        aes(y = pmin(-log10(min_p), 5), 
-            x = target_source, 
-            color = target_source)
-      ) + 
-        ggbeeswarm::geom_beeswarm() +
-        scale_color_manual(values = pals::kovesi.rainbow(length(drug_target_sources))) + 
-        geom_hline(yintercept = -log10(0.05), color = "red") +
-        theme_bw() + 
-        facet_wrap(drug~.) + 
-        theme(
-          axis.text.x = element_blank(), #element_text(angle = 90, vjust = 0.5, hjust = 1), 
-          axis.title.x = element_blank()
+          ggbeeswarm::geom_beeswarm() +
+          scale_color_manual(values = pals::kovesi.rainbow(length(drug_target_sources))) + 
+          geom_hline(yintercept = log2(1.5), color = "red") +
+          theme_bw() + 
+          facet_wrap(drug~.) + 
+          theme(
+            axis.text.x = element_blank(), #element_text(angle = 90, vjust = 0.5, hjust = 1), 
+            axis.title.x = element_blank()
+          ) + 
+          ggtitle("effect-size between pan-cancer sensitive and resistant groups' drug target expression")
+        
+        save_figure_safe(
+          p1, 
+          png, 
+          paste0(dt_path, res_str, "_drug_target_expression_pan_cancer_effect_size.png"), 
+          width = plot_width*1.4*ifelse(filter_results | filter_indications, 1, 1.5), 
+          height = plot_width*ifelse(filter_results | filter_indications, 1, 1.5), 
+          res = plot_res, 
+          units = plot_units
+        )
+        
+        p1 <- ggplot(
+          drug_min_p, 
+          aes(y = pmin(-log10(min_p), 5), 
+              x = target_source, 
+              color = target_source)
         ) + 
-        ggtitle("minimum t-test p-value between pan-cancer sensitive and resistant groups' drug target expression")
-      
-      save_figure_safe(
-        p1, 
-        png, 
-        paste0(dt_path, res_str, "_minimum_drug_target_expression_pan_cancer_t_test.png"), 
-        width = plot_width*1.4*ifelse(filter_results | filter_indications, 1, 1.5), 
-        height = plot_width*ifelse(filter_results | filter_indications, 1, 1.5), 
-        res = plot_res, 
-        units = plot_units
-      )
-      
-      # Tested within cancers
-      p1 <- ggplot(
-        cancer_drug_target_res, 
-        aes(y = pmin(-log10(p_value), 5), 
-            x = target_source, 
-            color = target_source)
-      ) + 
-        ggbeeswarm::geom_beeswarm() +
-        scale_color_manual(values = pals::kovesi.rainbow(length(drug_target_sources))) + 
-        geom_hline(yintercept = -log10(0.05), color = "red") +
-        theme_bw() + 
-        facet_wrap(drug~.) + 
-        theme(
-          axis.text.x = element_blank(), #element_text(angle = 90, vjust = 0.5, hjust = 1), 
-          axis.title.x = element_blank()
+          ggbeeswarm::geom_beeswarm() +
+          scale_color_manual(values = pals::kovesi.rainbow(length(drug_target_sources))) + 
+          geom_hline(yintercept = -log10(0.05), color = "red") +
+          theme_bw() + 
+          facet_wrap(drug~.) + 
+          theme(
+            axis.text.x = element_blank(), #element_text(angle = 90, vjust = 0.5, hjust = 1), 
+            axis.title.x = element_blank()
+          ) + 
+          ggtitle("minimum t-test p-value between pan-cancer sensitive and resistant groups' drug target expression")
+        
+        save_figure_safe(
+          p1, 
+          png, 
+          paste0(dt_path, res_str, "_minimum_drug_target_expression_pan_cancer_t_test.png"), 
+          width = plot_width*1.4*ifelse(filter_results | filter_indications, 1, 1.5), 
+          height = plot_width*ifelse(filter_results | filter_indications, 1, 1.5), 
+          res = plot_res, 
+          units = plot_units
+        )
+        
+        # Tested within cancers
+        p1 <- ggplot(
+          cancer_drug_target_res, 
+          aes(y = pmin(-log10(p_value), 5), 
+              x = target_source, 
+              color = target_source)
         ) + 
-        ggtitle("aggregated t-test p-values between cancer specific sensitive and resistant groups' drug target expression")
-      
-      save_figure_safe(
-        p1, 
-        png, 
-        paste0(dt_path, res_str, "_drug_target_expression_cancer_specific_t_test_drug_aggregated.png"), 
-        width = plot_width*1.4*ifelse(filter_results | filter_indications, 1, 1.5), 
-        height = plot_width*ifelse(filter_results | filter_indications, 1, 1.5), 
-        res = plot_res, 
-        units = plot_units
-      )
-      
-      p1 <- ggplot(
-        cancer_p_significance, 
-        aes(y = `p<0.05 fraction`, 
-            x = target_source, 
-            color = target_source)
-      ) + 
-        ggbeeswarm::geom_beeswarm() +
-        scale_color_manual(values = pals::kovesi.rainbow(length(drug_target_sources))) + 
-        theme_bw() + 
-        facet_wrap(cancer~.) + 
-        theme(
-          axis.text.x = element_blank(), #element_text(angle = 90, vjust = 0.5, hjust = 1), 
-          axis.title.x = element_blank()
+          ggbeeswarm::geom_beeswarm() +
+          scale_color_manual(values = pals::kovesi.rainbow(length(drug_target_sources))) + 
+          geom_hline(yintercept = -log10(0.05), color = "red") +
+          theme_bw() + 
+          facet_wrap(drug~.) + 
+          theme(
+            axis.text.x = element_blank(), #element_text(angle = 90, vjust = 0.5, hjust = 1), 
+            axis.title.x = element_blank()
+          ) + 
+          ggtitle("aggregated t-test p-values between cancer specific sensitive and resistant groups' drug target expression")
+        
+        save_figure_safe(
+          p1, 
+          png, 
+          paste0(dt_path, res_str, "_drug_target_expression_cancer_specific_t_test_drug_aggregated.png"), 
+          width = plot_width*1.4*ifelse(filter_results | filter_indications, 1, 1.5), 
+          height = plot_width*ifelse(filter_results | filter_indications, 1, 1.5), 
+          res = plot_res, 
+          units = plot_units
+        )
+        
+        p1 <- ggplot(
+          cancer_p_significance, 
+          aes(y = `p<0.05 fraction`, 
+              x = target_source, 
+              color = target_source)
         ) + 
-        ggtitle("aggregated t-test significance fraction between cancer specific sensitive and resistant groups' drug target expression")
-      
-      save_figure_safe(
-        p1, 
-        png, 
-        paste0(dt_path, res_str, "_drug_target_expression_cancer_specific_t_test_significance_fraction_cancer_aggregated.png"), 
-        width = plot_width*1.4, 
-        height = plot_width, 
-        res = plot_res, 
-        units = plot_units
-      )
-      
-      p1 <- ggplot(
-        cancer_drug_target_res, 
-        aes(y = pmin(-log10(p_value), 5), 
-            x = target_source, 
-            color = target_source)
-      ) + 
-        ggbeeswarm::geom_beeswarm() +
-        scale_color_manual(values = pals::kovesi.rainbow(length(drug_target_sources))) + 
-        geom_hline(yintercept = -log10(0.05), color = "red") +
-        theme_bw() + 
-        facet_wrap(cancer~.) + 
-        theme(
-          axis.text.x = element_blank(), #element_text(angle = 90, vjust = 0.5, hjust = 1), 
-          axis.title.x = element_blank()
+          ggbeeswarm::geom_beeswarm() +
+          scale_color_manual(values = pals::kovesi.rainbow(length(drug_target_sources))) + 
+          theme_bw() + 
+          facet_wrap(cancer~.) + 
+          theme(
+            axis.text.x = element_blank(), #element_text(angle = 90, vjust = 0.5, hjust = 1), 
+            axis.title.x = element_blank()
+          ) + 
+          ggtitle("aggregated t-test significance fraction between cancer specific sensitive and resistant groups' drug target expression")
+        
+        save_figure_safe(
+          p1, 
+          png, 
+          paste0(dt_path, res_str, "_drug_target_expression_cancer_specific_t_test_significance_fraction_cancer_aggregated.png"), 
+          width = plot_width*1.4, 
+          height = plot_width, 
+          res = plot_res, 
+          units = plot_units
+        )
+        
+        p1 <- ggplot(
+          cancer_drug_target_res, 
+          aes(y = pmin(-log10(p_value), 5), 
+              x = target_source, 
+              color = target_source)
         ) + 
-        ggtitle("aggregated t-test p-values between cancer specific sensitive and resistant groups' drug target expression")
-      
-      save_figure_safe(
-        p1, 
-        png, 
-        paste0(dt_path, res_str, "_drug_target_expression_cancer_specific_t_test_cancer_aggregated.png"), 
-        width = plot_width*1.4, 
-        height = plot_width, 
-        res = plot_res, 
-        units = plot_units
-      )
-      
-      p1 <- ggplot(
-        cancer_drug_min_p, 
-        aes(y = pmin(-log10(min_p), 5), 
-            x = target_source, 
-            color = target_source)
-      ) + 
-        ggbeeswarm::geom_beeswarm() +
-        scale_color_manual(values = pals::kovesi.rainbow(length(drug_target_sources))) + 
-        geom_hline(yintercept = -log10(0.05), color = "red") +
-        theme_bw() + 
-        facet_wrap(cancer~.) + 
-        theme(
-          axis.text.x = element_blank(), #element_text(angle = 90, vjust = 0.5, hjust = 1), 
-          axis.title.x = element_blank()
+          ggbeeswarm::geom_beeswarm() +
+          scale_color_manual(values = pals::kovesi.rainbow(length(drug_target_sources))) + 
+          geom_hline(yintercept = -log10(0.05), color = "red") +
+          theme_bw() + 
+          facet_wrap(cancer~.) + 
+          theme(
+            axis.text.x = element_blank(), #element_text(angle = 90, vjust = 0.5, hjust = 1), 
+            axis.title.x = element_blank()
+          ) + 
+          ggtitle("aggregated t-test p-values between cancer specific sensitive and resistant groups' drug target expression")
+        
+        save_figure_safe(
+          p1, 
+          png, 
+          paste0(dt_path, res_str, "_drug_target_expression_cancer_specific_t_test_cancer_aggregated.png"), 
+          width = plot_width*1.4, 
+          height = plot_width, 
+          res = plot_res, 
+          units = plot_units
+        )
+        
+        p1 <- ggplot(
+          cancer_drug_min_p, 
+          aes(y = pmin(-log10(min_p), 5), 
+              x = target_source, 
+              color = target_source)
         ) + 
-        ggtitle("aggregated minimum t-test p-values between cancer specific sensitive and resistant groups' drug target expression")
-      
-      save_figure_safe(
-        p1, 
-        png, 
-        paste0(dt_path, res_str, "_minimum_drug_target_expression_cancer_specific_t_test_cancer_aggregated.png"), 
-        width = plot_width*1.4, 
-        height = plot_width, 
-        res = plot_res, 
-        units = plot_units
-      )
-      
-      p1 <- ggplot(
-        cancer_drug_min_p, 
-        aes(y = pmin(-log10(min_p), 5), 
-            x = target_source, 
-            color = target_source)
-      ) + 
-        ggbeeswarm::geom_beeswarm() +
-        scale_color_manual(values = pals::kovesi.rainbow(length(drug_target_sources))) + 
-        geom_hline(yintercept = -log10(0.05), color = "red") +
-        theme_bw() + 
-        facet_wrap(drug~.) + 
-        theme(
-          axis.text.x = element_blank(), #element_text(angle = 90, vjust = 0.5, hjust = 1), 
-          axis.title.x = element_blank()
+          ggbeeswarm::geom_beeswarm() +
+          scale_color_manual(values = pals::kovesi.rainbow(length(drug_target_sources))) + 
+          geom_hline(yintercept = -log10(0.05), color = "red") +
+          theme_bw() + 
+          facet_wrap(cancer~.) + 
+          theme(
+            axis.text.x = element_blank(), #element_text(angle = 90, vjust = 0.5, hjust = 1), 
+            axis.title.x = element_blank()
+          ) + 
+          ggtitle("aggregated minimum t-test p-values between cancer specific sensitive and resistant groups' drug target expression")
+        
+        save_figure_safe(
+          p1, 
+          png, 
+          paste0(dt_path, res_str, "_minimum_drug_target_expression_cancer_specific_t_test_cancer_aggregated.png"), 
+          width = plot_width*1.4, 
+          height = plot_width, 
+          res = plot_res, 
+          units = plot_units
+        )
+        
+        p1 <- ggplot(
+          cancer_drug_min_p, 
+          aes(y = pmin(-log10(min_p), 5), 
+              x = target_source, 
+              color = target_source)
         ) + 
-        ggtitle("aggregated minimum t-test p-values between cancer specific sensitive and resistant groups' drug target expression")
-      
-      save_figure_safe(
-        p1, 
-        png, 
-        paste0(dt_path, res_str, "_minimum_drug_target_expression_cancer_specific_t_test_drug_aggregated.png"), 
-        width = plot_width*1.4*ifelse(filter_results | filter_indications, 1, 1.5), 
-        height = plot_width*ifelse(filter_results | filter_indications, 1, 1.5), 
-        res = plot_res, 
-        units = plot_units
-      )
+          ggbeeswarm::geom_beeswarm() +
+          scale_color_manual(values = pals::kovesi.rainbow(length(drug_target_sources))) + 
+          geom_hline(yintercept = -log10(0.05), color = "red") +
+          theme_bw() + 
+          facet_wrap(drug~.) + 
+          theme(
+            axis.text.x = element_blank(), #element_text(angle = 90, vjust = 0.5, hjust = 1), 
+            axis.title.x = element_blank()
+          ) + 
+          ggtitle("aggregated minimum t-test p-values between cancer specific sensitive and resistant groups' drug target expression")
+        
+        save_figure_safe(
+          p1, 
+          png, 
+          paste0(dt_path, res_str, "_minimum_drug_target_expression_cancer_specific_t_test_drug_aggregated.png"), 
+          width = plot_width*1.4*ifelse(filter_results | filter_indications, 1, 1.5), 
+          height = plot_width*ifelse(filter_results | filter_indications, 1, 1.5), 
+          res = plot_res, 
+          units = plot_units
+        )
+      }
     }
   }
   
@@ -484,8 +490,8 @@ for (save_dir in save_dirs) {
           dt_sig_frac_summary_df <- rbind(
             dt_sig_frac_summary_df, 
             data.frame(
-              subset = dt_sig_frac_subset_name_map[res_str], 
-              table = dt_sig_frac_table_name_map[k], 
+              filtering_subset = dt_sig_frac_subset_name_map[res_str], 
+              p_value_table = dt_sig_frac_table_name_map[k], 
               plyr::ddply(
                 target_res_list[[res_str]][[k]], 
                 "target_source", 
@@ -509,7 +515,38 @@ for (save_dir in save_dirs) {
   }
   target_res_df <- dplyr::bind_rows(target_res_df_list)
   fn <- paste0(dt_path, "combined_t_tests.csv.gz")
-  readr::write_csv(target_res_df, file = gzfile(fn))
+  if (!file.exists(fn)) readr::write_csv(target_res_df, file = gzfile(fn))
+  #target_res_df <- readr::read_csv(fn)
+  
+  dt_sig_frac_summary_df |>
+    #dplyr::filter(filtering_subset == "indication filter") |> 
+    tidyr::pivot_wider(
+      id_cols = c("filtering_subset", "p_value_table"), 
+      names_from = "target_source", 
+      values_from = "p_significant_fraction", 
+    )
+  dt_sig_frac_summary_df |>
+    #dplyr::filter(filtering_subset == "indication filter") |> 
+    tidyr::pivot_wider(
+      id_cols = c("filtering_subset", "p_value_table"), 
+      names_from = "target_source", 
+      values_from = "p_and_logfc_significant_fraction", 
+    )
+  
+  dt_sig_frac_summary_df |>
+    #dplyr::filter(filtering_subset == "indication filter") |> 
+    tidyr::pivot_wider(
+      id_cols = c("target_source", "p_value_table"), 
+      names_from = "filtering_subset", 
+      values_from = "p_significant_fraction", 
+    )
+  dt_sig_frac_summary_df |>
+    #dplyr::filter(filtering_subset == "indication filter") |> 
+    tidyr::pivot_wider(
+      id_cols = c("target_source", "p_value_table"), 
+      names_from = "filtering_subset", 
+      values_from = "p_and_logfc_significant_fraction", 
+    )
   
   p1 <- ggplot(
     dt_sig_frac_summary_df, 
@@ -585,16 +622,4 @@ for (save_dir in save_dirs) {
   with(target_res_list[["unfiltered_indicated"]][["cancer_drug_target_res"]], tapply(p_value < 0.05 & abs(log2FC) > log2(1.5), target_source, mean))
   with(target_res_list[["filtered_indicated"]][["drug_target_res"]], tapply(p_value < 0.05 & abs(log2FC) > log2(1.5), target_source, mean))
   with(target_res_list[["unfiltered_indicated"]][["drug_target_res"]], tapply(p_value < 0.05 & abs(log2FC) > log2(1.5), target_source, mean))
-  
-  # Filter by drug indications in Open Targets
-  fn <- paste0(ctrp_path, "open_targets_indications.csv")
-  tcga_ot_di_df <- readr::read_csv(fn)
-  
-  di_drugs <- only_alphanumericals(unique(tcga_ot_di_df[["drug"]])) 
-  dt_drugs <- only_alphanumericals(unique(target_res_list[["unfiltered"]][["cancer_drug_target_res"]][["drug"]]))
-  
-  di_drugs[!di_drugs %in% dt_drugs]
-  
-  cancer_drug_indication_filter <- dplyr::distinct(tcga_ot_di_df[,c("tcga_type", "drug")])
-  
 }
