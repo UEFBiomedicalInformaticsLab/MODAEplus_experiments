@@ -467,6 +467,7 @@ for (save_dir in save_dirs) {
     unfiltered_indicated = "indication filterg", 
     unfiltered_unindicated = "no filtering"
   )
+  target_res_df_list <- list()
   dt_sig_frac_summary_df <- data.frame()
   for (filter_results in c(FALSE, TRUE)) {
     for (filter_indications in c(FALSE, TRUE)) {
@@ -499,8 +500,16 @@ for (save_dir in save_dirs) {
           )
         }
       }
+      target_res_df_list[[res_str]] <- dplyr::bind_rows(
+        target_res_list[[res_str]][["cancer_drug_target_res"]], 
+        data.frame(cancer = "pan_cancer", target_res_list[[res_str]][["drug_target_res"]])
+      )
+      target_res_df_list[[res_str]][["subset"]] <- res_str
     }
   }
+  target_res_df <- dplyr::bind_rows(target_res_df_list)
+  fn <- paste0(dt_path, "combined_t_tests.csv.gz")
+  readr::write_csv(target_res_df, file = gzfile(fn))
   
   p1 <- ggplot(
     dt_sig_frac_summary_df, 
@@ -555,27 +564,27 @@ for (save_dir in save_dirs) {
   )
   
   # Overall significance rate of minimum p-value
-  with(target_res_list[["filtered"]][["cancer_drug_min_p"]], tapply(min_p < 0.05, target_source, mean))
-  with(target_res_list[["unfiltered"]][["cancer_drug_min_p"]], tapply(min_p < 0.05, target_source, mean))
-  with(target_res_list[["filtered"]][["drug_min_p"]], tapply(min_p < 0.05, target_source, mean))
-  with(target_res_list[["unfiltered"]][["drug_min_p"]], tapply(min_p < 0.05, target_source, mean))
+  with(target_res_list[["filtered_indicated"]][["cancer_drug_min_p"]], tapply(min_p < 0.05, target_source, mean))
+  with(target_res_list[["unfiltered_indicated"]][["cancer_drug_min_p"]], tapply(min_p < 0.05, target_source, mean))
+  with(target_res_list[["filtered_indicated"]][["drug_min_p"]], tapply(min_p < 0.05, target_source, mean))
+  with(target_res_list[["unfiltered_indicated"]][["drug_min_p"]], tapply(min_p < 0.05, target_source, mean))
   
-  with(target_res_list[["filtered"]][["cancer_drug_min_p"]], tapply(min_p < 0.05 & abs(log2FC) > log2(1.5), target_source, mean))
-  with(target_res_list[["unfiltered"]][["cancer_drug_min_p"]], tapply(min_p < 0.05 & abs(log2FC) > log2(1.5), target_source, mean))
-  with(target_res_list[["filtered"]][["drug_min_p"]], tapply(min_p < 0.05 & abs(log2FC) > log2(1.5), target_source, mean))
-  with(target_res_list[["unfiltered"]][["drug_min_p"]], tapply(min_p < 0.05 & abs(log2FC) > log2(1.5), target_source, mean))
+  with(target_res_list[["filtered_indicated"]][["cancer_drug_min_p"]], tapply(min_p < 0.05 & abs(log2FC) > log2(1.5), target_source, mean))
+  with(target_res_list[["unfiltered_indicated"]][["cancer_drug_min_p"]], tapply(min_p < 0.05 & abs(log2FC) > log2(1.5), target_source, mean))
+  with(target_res_list[["filtered_indicated"]][["drug_min_p"]], tapply(min_p < 0.05 & abs(log2FC) > log2(1.5), target_source, mean))
+  with(target_res_list[["unfiltered_indicated"]][["drug_min_p"]], tapply(min_p < 0.05 & abs(log2FC) > log2(1.5), target_source, mean))
   
   # Overall significance rate of all p-values
-  with(target_res_list[["filtered"]][["cancer_drug_target_res"]], tapply(p_value < 0.05, target_source, mean))
-  with(target_res_list[["unfiltered"]][["cancer_drug_target_res"]], tapply(p_value < 0.05, target_source, mean))
-  with(target_res_list[["filtered"]][["drug_target_res"]], tapply(p_value < 0.05, target_source, mean))
-  with(target_res_list[["unfiltered"]][["drug_target_res"]], tapply(p_value < 0.05, target_source, mean))
+  with(target_res_list[["filtered_indicated"]][["cancer_drug_target_res"]], tapply(p_value < 0.05, target_source, mean))
+  with(target_res_list[["unfiltered_indicated"]][["cancer_drug_target_res"]], tapply(p_value < 0.05, target_source, mean))
+  with(target_res_list[["filtered_indicated"]][["drug_target_res"]], tapply(p_value < 0.05, target_source, mean))
+  with(target_res_list[["unfiltered_indicated"]][["drug_target_res"]], tapply(p_value < 0.05, target_source, mean))
   
   # Overall significance and effect-size exceeding rate of all p-values
-  with(target_res_list[["filtered"]][["cancer_drug_target_res"]], tapply(p_value < 0.05 & abs(log2FC) > log2(1.5), target_source, mean))
-  with(target_res_list[["unfiltered"]][["cancer_drug_target_res"]], tapply(p_value < 0.05 & abs(log2FC) > log2(1.5), target_source, mean))
-  with(target_res_list[["filtered"]][["drug_target_res"]], tapply(p_value < 0.05 & abs(log2FC) > log2(1.5), target_source, mean))
-  with(target_res_list[["unfiltered"]][["drug_target_res"]], tapply(p_value < 0.05 & abs(log2FC) > log2(1.5), target_source, mean))
+  with(target_res_list[["filtered_indicated"]][["cancer_drug_target_res"]], tapply(p_value < 0.05 & abs(log2FC) > log2(1.5), target_source, mean))
+  with(target_res_list[["unfiltered_indicated"]][["cancer_drug_target_res"]], tapply(p_value < 0.05 & abs(log2FC) > log2(1.5), target_source, mean))
+  with(target_res_list[["filtered_indicated"]][["drug_target_res"]], tapply(p_value < 0.05 & abs(log2FC) > log2(1.5), target_source, mean))
+  with(target_res_list[["unfiltered_indicated"]][["drug_target_res"]], tapply(p_value < 0.05 & abs(log2FC) > log2(1.5), target_source, mean))
   
   # Filter by drug indications in Open Targets
   fn <- paste0(ctrp_path, "open_targets_indications.csv")
