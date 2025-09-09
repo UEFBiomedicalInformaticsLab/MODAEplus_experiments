@@ -162,8 +162,9 @@ for (save_dir in save_dirs) {
     "ctd_10int"
   )[-4]
   
-  save_drug_target_figures <- TRUE
+  save_drug_target_figures <- FALSE
   # Regression based associations (just correlation plots for now)
+  drug_target_regression_df_list <- list()
   for (drug_target_source in drug_target_sources) {
     drug_target_genes_json <- readLines(paste0(ctrp_path, drug_target_source, "_drug_target_genes.json"))
     drug_target_genes <- rjson::fromJSON(drug_target_genes_json)
@@ -189,37 +190,82 @@ for (save_dir in save_dirs) {
           sens_label_df <- data.frame(
             patient = gsub("\\.", "-", rownames(best_patient_dr_predictions)), 
             sensitivity = sensi[[1]])
-          gex_mat <- as.matrix(gene_expression_internal[, targetsi, drop = FALSE])
-          gex_df <- reshape2::melt(gex_mat, varnames = c("patient", "gene"), value.name = "TPM")
+          gex_mat <- scale(
+            log2(as.matrix(gene_expression_internal[, targetsi, drop = FALSE])+1), 
+            center = TRUE, 
+            scale = TRUE
+          )
+          gex_df <- reshape2::melt(gex_mat, varnames = c("patient", "gene"), value.name = "log2TPM")
           gex_df[["cancer"]] <- cancer_type_map[gex_df[["patient"]]]
           gex_df[["patient"]] <- gsub("\\.", "-", gex_df[["patient"]])
           gex_df <- plyr::join(gex_df, sens_label_df, by = "patient", type = "inner")
           gex_df[["drug"]] <- ctrp_drugs[drugi]
           
-          
           if (TRUE || tolower(ctrp_drugs[drugi]) %in% drugs_of_interest) {
             #png(paste0(best_dr_res_path, "drug_target_expression/", drug_target_source, "/", ctrp_drugs[drugi], ".png"), 
             #    width = plot_width, height = plot_height, res = plot_res, units = plot_units)
-            if (FALSE) {
+            if (TRUE) {
               # Beta regression for testing sensitivity ~ expression associations.
               # Test code using heavy computation to account for zero-inflation
               # in sensitity values. 
               for (targeti in targetsi) {
-                mod1 <- betareg::betareg(sensitivity ~ log2(TPM+1):cancer + cancer, data = dplyr::filter(gex_df, gene == targeti))
-                mod2 <- brms::brm(
-                  brms::bf(
-                    sensitivity ~ (1+log2(TPM+1) | cancer), 
-                    zi ~ (1 | cancer)
-                  ), 
-                  data = dplyr::filter(gex_df, gene == targeti), 
-                  family = brms::zero_inflated_beta(), 
-                  chains = 4, 
-                  iter = 2000, 
-                  warmup = 1000, 
-                  cores = 10, 
-                  seed = 0, 
-                  backend = "rstan"
+                pancan_mod <- betareg::betareg(
+                  sensitivity ~ log2TPM, 
+                  data = dplyr::filter(gex_df, gene == targeti)
                 )
+                pancan_mod_sum <- summary(pancan_mod)
+                coef_name_map <- c(
+                  beta = "mean", 
+                  xbetax = "mu"
+                )
+                pancan_df <- data.frame(
+                  cancer = "pan_cancer", 
+                  drug = ctrp_drugs[drugi], 
+                  target = targeti, 
+                  coefficient = pancan_mod$coefficients[[coef_name_map[pancan_mod$dist]]]["log2TPM"], 
+                  p_value = pancan_mod_sum$coefficients[[coef_name_map[pancan_mod$dist]]]["log2TPM","Pr(>|z|)"], 
+                  pseudo.R.sq = pancan_mod$pseudo.r.squared
+                )
+                drug_target_regression_df_list <- c(
+                  drug_target_regression_df_list, 
+                  list(pancan_df)
+                )
+                for (canceri in pan_cancer_types) {
+                  try({
+                    can_mod <- betareg::betareg(
+                      sensitivity ~ log2TPM, 
+                      data = dplyr::filter(gex_df, gene == targeti, cancer == canceri)
+                    )
+                    can_mod_sum <- summary(can_mod)
+                    drug_target_regression_df_list <- c(
+                      drug_target_regression_df_list, 
+                      list(data.frame(
+                        cancer = canceri, 
+                        drug = ctrp_drugs[drugi], 
+                        target = targeti, 
+                        coefficient = can_mod$coefficients[[coef_name_map[can_mod$dist]]]["log2TPM"], 
+                        p_value = can_mod_sum$coefficients[[coef_name_map[can_mod$dist]]]["log2TPM","Pr(>|z|)"], 
+                        pseudo.R.sq = can_mod$pseudo.r.squared
+                      ))
+                    )
+                  })
+                }
+                if (FALSE) {
+                  mod2 <- brms::brm(
+                    brms::bf(
+                      sensitivity ~ (1+log2TPM | cancer), 
+                      zi ~ (1 | cancer)
+                    ), 
+                    data = dplyr::filter(gex_df, gene == targeti), 
+                    family = brms::zero_inflated_beta(), 
+                    chains = 4, 
+                    iter = 2000, 
+                    warmup = 1000, 
+                    cores = 10, 
+                    seed = 0, 
+                    backend = "rstan"
+                  )
+                }
               }
             }
             
