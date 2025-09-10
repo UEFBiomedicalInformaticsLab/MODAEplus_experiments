@@ -1,17 +1,20 @@
 #!/bin/bash
-#SBATCH --job-name=TCGA_SUPERAE_SETUP
+#SBATCH --job-name=MODAE_SETUP
 #SBATCH -N 1
 #SBATCH -n 1
 #SBATCH --cpus-per-task=1
 #SBATCH --partition=small
 #SBATCH --mem=10G
 #SBATCH -t 0-00:15:00
-#SBATCH --output=log/TCGA_SUPERAE_SETUP.%A.out
-#SBATCH --error=log/TCGA_SUPERAE_SETUP.%A.err
-##SBATCH --mail-user=teemu.rintala@uef.fi
-##SBATCH --mail-type=NONE
-#SBATCH --exclude=kudos[12]
+#SBATCH --output=log/MODAE_SETUP.%A.out
+#SBATCH --error=log/MODAE_SETUP.%A.err
+##SBATCH --mail-user=
+#SBATCH --mail-type=NONE
 
+# Host paths
+source path.conf
+
+# Container internal paths
 export DATA_PATH=/data
 export SAVE_PATH=/output/20250410_random_search/
 
@@ -66,8 +69,8 @@ export FILTER_INCLUDE=solid
 #export FILTER_INCLUDE=solid
 
 apptainer run \
-  --bind /research/groups/fortino/teemu/MODAE_data:/data \
-  --bind /research/groups/fortino/teemu/MODAE_output:/output \
+  --bind $MODAE_DATA_PATH:/data \
+  --bind $MODAE_OUTPUT_PATH:/output \
   ../container/modae.sif \
     -l mrna \
     -o $NAME \

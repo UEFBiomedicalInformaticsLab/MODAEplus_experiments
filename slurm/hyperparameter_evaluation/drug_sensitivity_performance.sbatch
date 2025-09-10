@@ -1,20 +1,23 @@
 #!/bin/bash
-#SBATCH --job-name=TCGA_SUPERAE_EVAL
+#SBATCH --job-name=MODAE_EVALUATION
 #SBATCH -N 1
 #SBATCH -n 1
 #SBATCH --cpus-per-task=96
 #SBATCH --partition=small
 #SBATCH --mem=400G
 #SBATCH -t 3-00:00:00
-#SBATCH --output=log/TCGA_SUPERAE_EVAL.%A.out
-#SBATCH --error=log/TCGA_SUPERAE_EVAL.%A.err
-##SBATCH --mail-user=teemu.rintala@uef.fi
-##SBATCH --mail-type=NONE
-#SBATCH --exclude=kudos12
+#SBATCH --output=log/MODAE_EVALUATION.%A.out
+#SBATCH --error=log/MODAE_EVALUATION.%A.err
+##SBATCH --mail-user=
+#SBATCH --mail-type=NONE
+
+# Host paths
+source path.conf
 
 apptainer exec \
-  --bind /research/groups/fortino/teemu/MODAE_data:/data \
-  --bind $HOME/MODAEplus_experiments:/scripts \
+  --bind $MODAE_DATA_PATH:/data \
+  --bind $MODAE_SCRIPT_PATH:/scripts \
+  --bind $MODAE_OUTPUT_PATH:/output \
   ../container/modae.sif python \
   /scripts/python/hyperparameter_evaluation/drug_sensitivity_performance.py \
   2> >(grep -v " I " >&2)

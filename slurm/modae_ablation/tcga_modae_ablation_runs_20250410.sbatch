@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name=TCGA_SUPERAE
+#SBATCH --job-name=MODAE_ABLATION
 #SBATCH -N 1
 #SBATCH -n 1
 #SBATCH --cpus-per-task=5
@@ -8,20 +8,23 @@
 #SBATCH --mem=25G
 ##SBATCH --gres=gpu:1
 #SBATCH -t 3-00:00:00
-#SBATCH --output=log/TCGA_SUPERAE.%A.out
-#SBATCH --error=log/TCGA_SUPERAE.%A.err
-##SBATCH --mail-user=teemu.rintala@uef.fi
-##SBATCH --mail-type=NONE
-#SBATCH --exclude=kudos[12]
+#SBATCH --output=log/MODAE_ABLATION.%A.out
+#SBATCH --error=log/MODAE_ABLATION.%A.err
+##SBATCH --mail-user=
+#SBATCH --mail-type=NONE
 
+# Host paths
+source path.conf
+
+# Container internal paths
 export SAVE_PATH=/output/20250410_random_search/
 
 export SAVE_PATH=${SAVE_PATH}pancan_ablation_test/
 export NAME=pancan_test_
 
 apptainer run \
-  --bind /research/groups/fortino/teemu/MODAE_output:/output \
-  modae.sif \
+  --bind $MODAE_OUTPUT_PATH:/output \
+  ../container/modae.sif \
     -l mrna \
     -o $NAME \
     -p $SAVE_PATH \

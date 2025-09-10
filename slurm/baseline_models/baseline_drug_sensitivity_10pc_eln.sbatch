@@ -8,12 +8,16 @@
 #SBATCH -t 3-00:00:00
 #SBATCH --output=log/CTRP_baseline.%A.out
 #SBATCH --error=log/CTRP_baseline.%A.err
-##SBATCH --mail-user=teemu.rintala@uef.fi
-##SBATCH --mail-type=NONE
+##SBATCH --mail-user=
+#SBATCH --mail-type=NONE
+
+# Host paths
+source path.conf
 
 apptainer exec \
-  --bind /research/groups/fortino/teemu/MODAE_data:/data \
-  --bind $HOME/MODAEplus_experiments:/scripts \
+  --bind $MODAE_DATA_PATH:/data \
+  --bind $MODAE_SCRIPT_PATH:/scripts \
+  --bind $MODAE_OUTPUT_PATH:/output \
   ../container/modae.sif python \
   /scripts/python/baseline_models/baseline_drug_sensitivity_main.py \
     --root_dir=/data/drug_sensitivity_xia/ \

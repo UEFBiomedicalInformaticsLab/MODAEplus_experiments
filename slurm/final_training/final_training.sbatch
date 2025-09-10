@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name=TCGA_MODAE_EVAL
+#SBATCH --job-name=MODAE_FINAL
 #SBATCH -N 1
 #SBATCH -n 1
 #SBATCH --cpus-per-task=2
@@ -7,11 +7,18 @@
 ##SBATCH --gres=gpu:1
 #SBATCH --mem=40G
 #SBATCH -t 3-00:00:00
-#SBATCH --output=log/TCGA_MODAE_EVAL.%A.out
-#SBATCH --error=log/TCGA_MODAE_EVAL.%A.err
-#SBATCH --mail-user=teemu.rintala@uef.fi
+#SBATCH --output=log/MODAE_FINAL.%A.out
+#SBATCH --error=log/MODAE_FINAL.%A.err
+##SBATCH --mail-user=
 #SBATCH --mail-type=NONE
 
-apptainer execute ../container/modae.sif python \
-    external_evaluation/external_validation.py \
+# Host paths
+source path.conf
+
+apptainer exec \
+  --bind $MODAE_DATA_PATH:/data \
+  --bind $MODAE_SCRIPT_PATH:/scripts \
+  --bind $MODAE_OUTPUT_PATH:/output \
+  ../container/modae.sif python \
+    /scripts/python/final_training/final_training.py \
     2> >(grep -v " I " >&2)
