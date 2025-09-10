@@ -11,6 +11,7 @@ From: tensorflow/tensorflow:2.19.0
     mkdir /scripts
     mkdir /output
     pip install --no-cache-dir /MODAE
+	pip install --no-cache-dir matplotlib seaborn
 
 %environment
     export MODAE_DATA_PATH=/data
