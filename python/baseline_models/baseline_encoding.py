@@ -5,7 +5,7 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.decomposition import PCA
 from sklearn.model_selection import GridSearchCV, KFold, RepeatedKFold, RepeatedStratifiedKFold
 from sklearn.metrics import mean_squared_error
-from sae.evaluation import DSC
+from modae.evaluation import DSC
 
 X = np.concatenate((data_dict['patient_exp'], data_dict['cl_exp']), axis = 0)
 group = np.concatenate((

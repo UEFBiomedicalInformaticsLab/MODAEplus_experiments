@@ -123,7 +123,7 @@ include_metas_labels = True
 exclude_metas_data = False
 
 if parameter_json:
-    from sae.parsing_utilities import modae_args_json_decoder
+    from modae.parsing_utilities import modae_args_json_decoder
     import json
     param_handle = open(best_parameter_file)
     search_kwargs = json.load(param_handle)
@@ -247,7 +247,7 @@ search_kwargs['data_dict'] = data_dict
 survival_time_standardize = False
 
 #%% Serialization
-from sae.data_utilities import JSONFeatureSpecDecoder
+from modae.data_utilities import JSONFeatureSpecDecoder
 import json
 from dataset_processing import process_and_serialize
 
@@ -347,7 +347,7 @@ model_args['drug_response_model_pred_seed'] = np.random.randint(
 )[0]
 
 #%% Load serialized data
-from sae.data_utilities import parse_serialized_dataset_from_file
+from modae.data_utilities import parse_serialized_dataset_from_file
 
 data_instance = serialized_data
 
@@ -381,7 +381,7 @@ else:
 data_model_spec = {**internal_patient_model_spec, **ccle_cl_model_spec}
 
 #%% Training
-from sae.training_utilities import train_aecl_with_pretraining
+from modae.training_utilities import train_aecl_with_pretraining
 
 model_args = copy(search_kwargs['model_args'])
 data_batch_args = copy(search_kwargs['data_batch_args'])
@@ -483,8 +483,8 @@ if len(diagnostics) > 0:
     )
 
 #%% Evaluation
-from sae.data_utilities import dataset_batch_setup
-from sae.evaluation import get_model_losses
+from modae.data_utilities import dataset_batch_setup
+from modae.evaluation import get_model_losses
 
 internal_patient_dataset_batched = dataset_batch_setup(
     internal_patient_dataset, 
@@ -503,7 +503,7 @@ internal_res = get_model_losses(
 import json
 import gzip
 
-from sae.model_utilities import get_embeddings, get_predictions, JSONWeightEncoder
+from modae.model_utilities import get_embeddings, get_predictions, JSONWeightEncoder
 
 ccle_cl_dataset_batched = dataset_batch_setup(ccle_cl_dataset, **data_batch_args)
 
@@ -788,8 +788,8 @@ predictions.to_csv(
 
 #%% CTRDB clinical trial data
 
-from sae.data_utilities import dataset_batch_setup
-from sae.model_utilities import get_embeddings, get_predictions
+from modae.data_utilities import dataset_batch_setup
+from modae.model_utilities import get_embeddings, get_predictions
 from dataset_collections import get_ctrdb_datasets, get_ctrdb
 
 ctrdb_datasets = list(get_ctrdb_datasets(data_root = data_root).keys())

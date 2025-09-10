@@ -4,7 +4,7 @@ import pandas as pd
 import numpy as np
 import re
 
-from sae.parsing_utilities import search_arg_generator
+from modae.parsing_utilities import search_arg_generator
 
 def get_kwargs(parameter_file):
     parameters = pd.read_csv(parameter_file, header = 0)

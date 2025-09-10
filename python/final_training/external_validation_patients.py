@@ -8,10 +8,10 @@ import json
 import importlib.util
 import sys
 
-from sae.data_utilities import JSONFeatureSpecDecoder
-from sae.data_utilities import parse_serialized_dataset_from_file
-from sae.data_utilities import dataset_batch_setup
-from sae.evaluation import get_model_losses
+from modae.data_utilities import JSONFeatureSpecDecoder
+from modae.data_utilities import parse_serialized_dataset_from_file
+from modae.data_utilities import dataset_batch_setup
+from modae.evaluation import get_model_losses
 
 script_path = os.environ.get('MODAE_SCRIPT_PATH', default = None)
 if script_path is None:
@@ -112,7 +112,7 @@ def do_external_patient_validation(
     
     #%% external patient predictions and embeddings
     
-    from sae.model_utilities import get_embeddings, get_predictions
+    from modae.model_utilities import get_embeddings, get_predictions
     
     z = get_embeddings(
         internal_result['model'], 

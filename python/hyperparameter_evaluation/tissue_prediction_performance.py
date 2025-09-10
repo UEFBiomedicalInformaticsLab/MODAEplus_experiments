@@ -201,7 +201,7 @@ from sklearn.metrics import (
 from sklearn.preprocessing import OneHotEncoder
 
 from multiprocessing import Pool
-from sae.evaluation import DSC
+from modae.evaluation import DSC
 from scipy.special import softmax
 
 oh_enc = OneHotEncoder(

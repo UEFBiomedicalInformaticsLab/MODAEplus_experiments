@@ -67,7 +67,7 @@ if len(parameter_files):
     parameters_dict = dict([(i['task_id'], i) for i in parameters_list])
 else:
     parameter_files = glob.glob(res_path + '*parameters*.json')
-    from sae.parsing_utilities import modae_args_json_decoder
+    from modae.parsing_utilities import modae_args_json_decoder
     import json
     parameters_list = []
     for fn in parameter_files:    
@@ -87,7 +87,7 @@ from sklearn.model_selection import GridSearchCV, cross_validate, KFold
 from sklearn import metrics
 from sklearn import preprocessing
 from multiprocessing import Pool
-from sae.evaluation import DSC
+from modae.evaluation import DSC
 
 def mapper(e_df, par_d):
     i = e_df['task'].iloc[0]

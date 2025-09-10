@@ -4,7 +4,7 @@ from sys import platform
 import pandas as pd
 import numpy as np
 
-from sae.data_utilities import complete_data_loader
+from modae.data_utilities import complete_data_loader
 
 #%% TCGA and CCLE data
 '''
