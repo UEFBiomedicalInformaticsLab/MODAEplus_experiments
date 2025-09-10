@@ -119,7 +119,7 @@ for (save_dir in save_dirs) {
   target_res_list <- list()
   
   sensitivity_filter <- FALSE
-  plot_drug_target_summaries <- TRUE
+  plot_drug_target_summaries <- FALSE
   for (filter_results in c(FALSE, TRUE)) {
     for (filter_indications in c(FALSE, TRUE)) {
       drug_target_res_list <- list()

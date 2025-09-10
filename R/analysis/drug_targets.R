@@ -209,46 +209,79 @@ for (save_dir in save_dirs) {
               # Test code using heavy computation to account for zero-inflation
               # in sensitity values. 
               for (targeti in targetsi) {
-                pancan_mod <- betareg::betareg(
-                  sensitivity ~ log2TPM, 
-                  data = dplyr::filter(gex_df, gene == targeti)
-                )
-                pancan_mod_sum <- summary(pancan_mod)
-                coef_name_map <- c(
-                  beta = "mean", 
-                  xbetax = "mu"
-                )
-                pancan_df <- data.frame(
-                  cancer = "pan_cancer", 
-                  drug = ctrp_drugs[drugi], 
-                  target = targeti, 
-                  coefficient = pancan_mod$coefficients[[coef_name_map[pancan_mod$dist]]]["log2TPM"], 
-                  p_value = pancan_mod_sum$coefficients[[coef_name_map[pancan_mod$dist]]]["log2TPM","Pr(>|z|)"], 
-                  pseudo.R.sq = pancan_mod$pseudo.r.squared
+                pancan_df <- tryCatch(
+                  {
+                    pancan_mod <- betareg::betareg(
+                      sensitivity ~ log2TPM, 
+                      data = dplyr::filter(gex_df, gene == targeti)
+                    )
+                    pancan_mod_sum <- summary(pancan_mod)
+                    coef_name_map <- c(
+                      beta = "mean", 
+                      xbetax = "mu"
+                    )
+                    data.frame(
+                      cancer = "pan_cancer", 
+                      drug = ctrp_drugs[drugi], 
+                      target = targeti, 
+                      coefficient = pancan_mod$coefficients[[coef_name_map[pancan_mod$dist]]]["log2TPM"], 
+                      p_value = pancan_mod_sum$coefficients[[coef_name_map[pancan_mod$dist]]]["log2TPM","Pr(>|z|)"], 
+                      pseudo.R.sq = pancan_mod$pseudo.r.squared
+                    )
+                  }
+                  , error = function(e) {
+                    print(e)
+                    return(
+                        data.frame(
+                        cancer = "pan_cancer", 
+                        drug = ctrp_drugs[drugi], 
+                        target = targeti, 
+                        coefficient = NA, 
+                        p_value = NA, 
+                        pseudo.R.sq = NA
+                      )
+                    )
+                  }
                 )
                 drug_target_regression_df_list <- c(
                   drug_target_regression_df_list, 
                   list(pancan_df)
                 )
                 for (canceri in pan_cancer_types) {
-                  try({
-                    can_mod <- betareg::betareg(
-                      sensitivity ~ log2TPM, 
-                      data = dplyr::filter(gex_df, gene == targeti, cancer == canceri)
-                    )
-                    can_mod_sum <- summary(can_mod)
-                    drug_target_regression_df_list <- c(
-                      drug_target_regression_df_list, 
-                      list(data.frame(
+                  can_df <- tryCatch(
+                    {
+                      can_mod <- betareg::betareg(
+                        sensitivity ~ log2TPM, 
+                        data = dplyr::filter(gex_df, gene == targeti, cancer == canceri)
+                      )
+                      can_mod_sum <- summary(can_mod)
+                      data.frame(
                         cancer = canceri, 
                         drug = ctrp_drugs[drugi], 
                         target = targeti, 
                         coefficient = can_mod$coefficients[[coef_name_map[can_mod$dist]]]["log2TPM"], 
                         p_value = can_mod_sum$coefficients[[coef_name_map[can_mod$dist]]]["log2TPM","Pr(>|z|)"], 
                         pseudo.R.sq = can_mod$pseudo.r.squared
-                      ))
-                    )
-                  })
+                      )
+                    }, 
+                    error = function(e) {
+                      print(e)
+                      return(
+                        data.frame(
+                          cancer = canceri, 
+                          drug = ctrp_drugs[drugi], 
+                          target = targeti, 
+                          coefficient = NA, 
+                          p_value = NA, 
+                          pseudo.R.sq = NA
+                        )
+                      )
+                    }
+                  )
+                  drug_target_regression_df_list <- c(
+                    drug_target_regression_df_list, 
+                    list(can_df)
+                  )
                 }
                 if (FALSE) {
                   mod2 <- brms::brm(
