@@ -42,9 +42,18 @@ the slurm directory.
 
 A setup script must be run to process the data: 
 [setup.sbatch](slurm/hyperparameter_tuning/tcga_modae_setup_20250410.sbatch)
+* It processes the selected datasets.
+* It splits the data into cross-validation folds for both parameter search and testing.
+* It serializes the data to files to minimize the memory footprint.
 
 A SLURM array job can be used to run multiple iterations of random search: 
 [rs.sbatch](slurm/hyperparameter_tuning/tcga_modae_rs_20250410.sbatch)
+* For each run it generates new random hyper-parameter settings.
+* It runs CV once with 3-to-1 train-test for the parameter search and once with
+  (3+1)-to-1 train-test for the testing. This corresponds to CV with a nested train-test
+  split for hyper-parameter selection. 
+* The CV is run using multiprocessing and can share one GPU between multiple processes.
+* The model is relatively small and often CPU-based training is more cost-effective. 
 
 ## Step 5 run additional hyper-parameter search evaluation
 
