@@ -30,8 +30,13 @@ The image can also be found on Zenodo (group folder).
 
 ## Step 3 SLURM config
 
-Check that files in slurm are configured appropriately, you may need to adjust 
-image, data, script, and output paths. 
+Check that files in slurm are configured appropriately, adjust 
+image, data, script, and output paths as necessary. The paths 
+can be configured in [slurm/path.conf](slurm/path.conf) which defaults 
+to subdirectories in $HOME. 
+
+To execute the analyses in the following steps run the sbatch command in 
+the slurm directory. 
 
 ## Step 4 run hyper-parameter search
 
@@ -65,4 +70,4 @@ and can be done with [python/final_training/external_validation_post_processing.
 
 ## Step 8 analyse final results
 
-See various scripts in [R/analysis/](R/analysis/).
+See various scripts in [R/analysis/](R/analysis/). 
