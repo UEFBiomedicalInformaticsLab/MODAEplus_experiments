@@ -468,8 +468,8 @@ for (save_dir in save_dirs) {
     drug_target_res = "pan-cancer\np-values"
   )
   dt_sig_frac_subset_name_map <- c(
-    filtered_indicated = "R^2, sensitivity, and indication filter", 
-    filtered_unindicated = "R^2 and sensitivity filter", 
+    filtered_indicated = "R^2 and indication filter", 
+    filtered_unindicated = "R^2 filter", 
     unfiltered_indicated = "indication filterg", 
     unfiltered_unindicated = "no filtering"
   )
@@ -518,35 +518,43 @@ for (save_dir in save_dirs) {
   if (!file.exists(fn)) readr::write_csv(target_res_df, file = gzfile(fn))
   #target_res_df <- readr::read_csv(fn)
   
+  fn <- paste0(dt_path, "t_test_significance_summary_by_source_p_rate.csv")
   dt_sig_frac_summary_df |>
     #dplyr::filter(filtering_subset == "indication filter") |> 
     tidyr::pivot_wider(
       id_cols = c("filtering_subset", "p_value_table"), 
       names_from = "target_source", 
       values_from = "p_significant_fraction", 
-    )
+    ) |>
+    readr::write_csv(file = fn)
+  fn <- paste0(dt_path, "t_test_significance_summary_by_source_pnlfc_rate.csv")
   dt_sig_frac_summary_df |>
     #dplyr::filter(filtering_subset == "indication filter") |> 
     tidyr::pivot_wider(
       id_cols = c("filtering_subset", "p_value_table"), 
       names_from = "target_source", 
       values_from = "p_and_logfc_significant_fraction", 
-    )
+    ) |>
+    readr::write_csv(file = fn)
   
+  fn <- paste0(dt_path, "t_test_significance_summary_by_subset_p_rate.csv")
   dt_sig_frac_summary_df |>
     #dplyr::filter(filtering_subset == "indication filter") |> 
     tidyr::pivot_wider(
       id_cols = c("target_source", "p_value_table"), 
       names_from = "filtering_subset", 
       values_from = "p_significant_fraction", 
-    )
+    ) |>
+    readr::write_csv(file = fn)
+  fn <- paste0(dt_path, "t_test_significance_summary_by_subset_pnlfc_rate.csv")
   dt_sig_frac_summary_df |>
     #dplyr::filter(filtering_subset == "indication filter") |> 
     tidyr::pivot_wider(
       id_cols = c("target_source", "p_value_table"), 
       names_from = "filtering_subset", 
       values_from = "p_and_logfc_significant_fraction", 
-    )
+    ) |>
+    readr::write_csv(file = fn)
   
   p1 <- ggplot(
     dt_sig_frac_summary_df, 
