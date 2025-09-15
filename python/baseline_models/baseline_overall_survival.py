@@ -13,7 +13,7 @@ if script_path is None:
 
 dsc_spec = importlib.util.spec_from_file_location(
     'dataset_collections', 
-    f"{script_path}/python/utilities/cancer_dataset_collections.py"
+    os.path.join(script_path, 'python/utilities/cancer_dataset_collections.py')
 )
 dsc = importlib.util.module_from_spec(dsc_spec)
 sys.modules['dataset_collections'] = dsc
@@ -21,7 +21,7 @@ dsc_spec.loader.exec_module(dsc)
 
 bsm_spec = importlib.util.spec_from_file_location(
     'baseline_survival_models', 
-    f"{script_path}/python/baseline_models/baseline_survival_models.py"
+    os.path.join(script_path, 'python/baseline_models/baseline_survival_models.py')
 )
 bsm = importlib.util.module_from_spec(bsm_spec)
 sys.modules['baseline_survival_models'] = bsm
@@ -38,7 +38,7 @@ data_root = os.environ.get('MODAE_DATA_PATH', default = None)
 if data_root is None:
     raise ValueError('Please define MODAE_DATA_PATH')
 
-res_path = f"{output_path}baseline_results/survival/"
+res_path = os.path.join(output_path, 'baseline_results/survival/')
 
 #%% Load internal data
 #source_dataset = 'scanb'
@@ -54,14 +54,14 @@ if source_dataset == 'tcga_brca':
         data_root = data_root, 
         gene_preselection = gene_preselection
     )
-    res_path += 'brca/tcga/'
+    res_path = os.path.join(res_path, 'brca/tcga/')
 elif source_dataset == 'scanb':
     from dataset_collections import get_scanb_ctrp_ccle_full
     internal_data_dict = get_scanb_ctrp_ccle_full(
         data_root = data_root, 
         gene_preselection = gene_preselection
     )
-    res_path += 'brca/scanb/'
+    res_path = os.path.join(res_path, 'brca/scanb/')
 elif source_dataset == 'tcga':
     from dataset_collections import get_tcga_pancan_ctrp_ccle_solid
     internal_data_dict = get_tcga_pancan_ctrp_ccle_solid(
@@ -69,9 +69,9 @@ elif source_dataset == 'tcga':
         gene_preselection = gene_preselection, 
         tissue_classifier = False
     )
-    res_path += 'pancan/'
+    res_path = os.path.join(res_path, 'pancan/')
 if gene_preselection:
-    res_path += 'gene_preselection/'
+    res_path = os.path.join(res_path, 'gene_preselection/')
 
 import os
 os.makedirs(res_path, exist_ok = True)
@@ -207,7 +207,7 @@ if pca_model:
         f"{source_dataset}_test_c" : pca100_res['test_c']})
     
     res_df = pd.concat([res_df_10pc, res_df_100pc], axis = 0)
-    res_df.to_csv(res_path + 'dr_model_internal_cross_validation.csv')
+    res_df.to_csv(os.path.join(res_path, 'dr_model_internal_cross_validation.csv'))
 
 #%% External data
 if external_data_dict is not None:
@@ -283,7 +283,7 @@ if pca_model and external_data_dict is not None:
             index = pd.RangeIndex(0,1)))
     
     ext_res_df = pd.concat(ext_res, axis = 0)
-    ext_res_df.to_csv(res_path + 'dr_model_external_validation.csv')
+    ext_res_df.to_csv(os.path.join(res_path, 'dr_model_external_validation.csv'))
 
 #%% Baseline FS + Cox Elastic Net
 from multiprocessing import Pool
@@ -321,7 +321,7 @@ def fit_and_score_features(X, y):
 if False:
     fs_scores = fit_and_score_features(X, y)
     fs_df = pd.DataFrame({'gene' : internal_data_dict['gene_ids'], 'score' : fs_scores})
-    fs_df.to_csv(f"{res_path}gene_concordance_index.csv")
+    fs_df.to_csv(os.path.join(res_path, 'gene_concordance_index.csv'))
 
 eln_model = CoxnetSurvivalAnalysis(max_iter = 100)
 model = Pipeline(steps = [
@@ -359,7 +359,7 @@ fs_res_df = pd.DataFrame({
     'fold' : fs_res['fold'], 
     f"{source_dataset}_train_c" : fs_res['train_c'], 
     f"{source_dataset}_test_c" : fs_res['test_c']})
-fs_res_df.to_csv(res_path + 'fs_model_internal_cross_validation.csv')
+fs_res_df.to_csv(os.path.join(res_path, 'fs_model_internal_cross_validation.csv'))
 
 #%% Final grid
 if external_data_dict is not None:
@@ -405,7 +405,7 @@ if external_data_dict is not None:
         f"{source_dataset}_c" : internal_score, 
         f"{target_dataset}_c" : external_score}, 
         index = pd.RangeIndex(0,1))
-    ext_fs_res_df.to_csv(res_path + 'fs_model_external_validation.csv')
+    ext_fs_res_df.to_csv(os.path.join(res_path, 'fs_model_external_validation.csv'))
 
 
 #%% Only covriates
@@ -439,4 +439,4 @@ if external_data_dict is not None:
     age_res_dict[f"{target_dataset}_c"] = external_score
 
 age_res_df = pd.DataFrame(age_res_dict, index = pd.RangeIndex(0,1))
-age_res_df.to_csv(res_path + 'covar_model_external_validation.csv')
+age_res_df.to_csv(os.path.join(res_path, 'covar_model_external_validation.csv'))

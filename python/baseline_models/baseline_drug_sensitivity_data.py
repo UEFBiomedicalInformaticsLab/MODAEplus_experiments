@@ -6,6 +6,8 @@ Created on Fri Oct 20 15:39:58 2023
 @author: teemu
 """
 
+import os
+
 import numpy as np
 import pandas as pd
 
@@ -15,38 +17,38 @@ def load_sensitivity_data(
         sensitivity_sources = ['CTRP']
 ):
     cl_metadata = pd.read_csv(
-        f"{root_dir}combined_cl_metadata", 
+        os.path.join(root_dir, 'combined_cl_metadata'), 
         sep = '\t', 
         index_col = 0
     )
     cl_rnaseq = pd.read_csv(
-        f"{root_dir}combined_rnaseq_data", 
+        os.path.join(root_dir, 'combined_rnaseq_data'), 
         sep = '\t', 
         index_col = 0
     )
     cl_rnaseq = cl_rnaseq.loc[cl_metadata.index]
     cl_mapping = pd.read_csv(
-        f"{root_dir}cl_mapping", 
+        os.path.join(root_dir, 'cl_mapping'), 
         sep = '\t', 
         header = None, 
         names = ['cl1', 'cl2']
     )
     cl_response = pd.read_csv(
-        f"{root_dir}combined_single_response_agg",
+        os.path.join(root_dir, 'combined_single_response_agg'),
         sep = '\t'
     )
     
     drug_feature_flag = False
     if np.isin('dragon_desc', drug_features):
         drug_dragon_desc = pd.read_csv(
-            f"{root_dir}Combined_PubChem_dragon7_descriptors.tsv", 
+            os.path.join(root_dir, 'Combined_PubChem_dragon7_descriptors.tsv'), 
             sep = '\t', 
             na_values = ['na']
         )
         drug_feature_flag = True
     if np.isin('dragon_ecfp', drug_features):
         drug_dragon_ecfp = pd.read_csv(
-            f"{root_dir}Combined_PubChem_dragon7_ECFP.tsv", 
+            os.path.join(root_dir, 'Combined_PubChem_dragon7_ECFP.tsv'), 
             sep = '\s+', 
             skiprows = 1,
             header = None, 
@@ -55,7 +57,7 @@ def load_sensitivity_data(
         drug_feature_flag = True
     if np.isin('dragon_pfp', drug_features):
         drug_dragon_pfp = pd.read_csv(
-            f"{root_dir}Combined_PubChem_dragon7_PFP.tsv", 
+            os.path.join(root_dir, 'Combined_PubChem_dragon7_PFP.tsv'), 
             sep = '\s+', 
             skiprows = 1, 
             header = None, 
@@ -64,7 +66,7 @@ def load_sensitivity_data(
         drug_feature_flag = True
     if np.isin('morderd', drug_features):
         drug_mordred = pd.read_csv(
-            f"{root_dir}extended_combined_mordred_descriptors", 
+            os.path.join(root_dir, 'extended_combined_mordred_descriptors'), 
             sep = '\t', 
             index_col = 0
         )
@@ -160,7 +162,7 @@ def load_old_sensitivity_data(
         cell_line_filter_inclusion_list = ['solid'], 
         cell_line_filter_exclusion_list = []):
     cl_data = pd.read_csv(
-        f"{cell_line_expression_root_dir}{cell_line_expression_file}", 
+        os.path.join(cell_line_expression_root_dir, cell_line_expression_file), 
         header = 0, 
         index_col = 0
     )
@@ -173,7 +175,7 @@ def load_old_sensitivity_data(
     cl_data_ind = cl_exp_id.to_numpy()
     if len(cell_line_filter_inclusion_list) > 0:
         cl_filter_table = pd.read_csv(
-            f"{cell_line_expression_root_dir}{cell_line_filter_mapping_file}", 
+            os.path.join(cell_line_expression_root_dir, cell_line_filter_mapping_file), 
             header = 0, 
             index_col = 0
         )
@@ -195,7 +197,7 @@ def load_old_sensitivity_data(
             cl_data = cl_data.loc[cl_filter,:]
     if len(cell_line_filter_exclusion_list) > 0:
         cl_filter_table = pd.read_csv(
-            f"{cell_line_expression_root_dir}{cell_line_filter_mapping_file}", 
+            os.path.join(cell_line_expression_root_dir, cell_line_filter_mapping_file), 
             header = 0, 
             index_col = 0
         )
@@ -227,17 +229,17 @@ def load_old_sensitivity_data(
     cl_data = cl_data.loc[:,cl_gene_mean_filter]
     
     dr_data = pd.read_csv(
-        f"{cell_line_drug_response_root_dir}{cell_line_drug_response_file}", 
+        os.path.join(cell_line_drug_response_root_dir, cell_line_drug_response_file), 
         header = 0, 
         index_col = 0
     )
     dr_row_info = pd.read_csv(
-        f"{cell_line_drug_response_root_dir}{cell_line_drug_response_row_info_file}", 
+        os.path.join(cell_line_drug_response_root_dir, cell_line_drug_response_row_info_file), 
         header = 0, 
         index_col = 0
     )
     dr_screen_cl_map = pd.read_csv(
-        f"{cell_line_drug_response_root_dir}{cell_line_drug_response_row_map_file}", 
+        os.path.join(cell_line_drug_response_root_dir, cell_line_drug_response_row_map_file), 
         header = 0, 
         index_col = 0
     )

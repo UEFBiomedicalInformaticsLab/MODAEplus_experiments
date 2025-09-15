@@ -27,7 +27,7 @@ data_root = os.environ.get('MODAE_DATA_PATH', default = None)
 if data_root is None:
     raise ValueError('Please define MODAE_DATA_PATH')
 
-codeae_data_folder = f"{data_root}CODE-AE-v1.0/data/"
+codeae_data_folder = os.path.join(data_root, 'CODE-AE-v1.0/data/')
 raw_data_folder = os.path.join(codeae_data_folder, 'raw_dat')
 ccle_folder = os.path.join(raw_data_folder, 'CCLE')
 ccle_sample_file = os.path.join(ccle_folder, 'sample_info.csv')

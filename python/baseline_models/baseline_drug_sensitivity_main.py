@@ -21,7 +21,7 @@ if script_path is None:
 
 dsc_spec = importlib.util.spec_from_file_location(
     'dataset_collections', 
-    f"{script_path}/python/utilities/cancer_dataset_collections.py"
+    os.path.join(script_path, 'python/utilities/cancer_dataset_collections.py')
 )
 dsc = importlib.util.module_from_spec(dsc_spec)
 sys.modules['dataset_collections'] = dsc
@@ -29,7 +29,7 @@ dsc_spec.loader.exec_module(dsc)
 
 drd_spec = importlib.util.spec_from_file_location(
     'baseline_dr_data', 
-    f"{script_path}/python/baseline_models/baseline_drug_sensitivity_data.py"
+    os.path.join(script_path, 'python/baseline_models/baseline_drug_sensitivity_data.py')
 )
 drd = importlib.util.module_from_spec(drd_spec)
 sys.modules['baseline_dr_data'] = drd
@@ -37,7 +37,7 @@ drd_spec.loader.exec_module(drd)
 
 drm_spec = importlib.util.spec_from_file_location(
     'baseline_dr_models', 
-    f"{script_path}/python/baseline_models/baseline_drug_sensitivity_models.py"
+    os.path.join(script_path, 'python/baseline_models/baseline_drug_sensitivity_models.py')
 )
 drm = importlib.util.module_from_spec(drm_spec)
 sys.modules['baseline_dr_models'] = drm
@@ -170,7 +170,7 @@ def main(
                     'gene' : [gene_names[j_max_gene]], 
                     'R2_mean' : [dri_r2_mean[j_max]], 
                 })
-                fn = f"{root_dir}{result_file}"
+                fn = os.path.join(root_dir, result_file)
                 res_df.to_csv(fn, mode = 'a')
         else:
             for dn in drug_names:
@@ -184,7 +184,7 @@ def main(
             fs_all = np.concatenate([i for i in fs_dict.values()])
             fs_all_uq = np.unique(fs_all)
             fs_symbols = [re.sub(' \\([0-9]+\\)', '', i) for i in fs_all_uq]
-            with open(f"{root_dir}top10_univariate_genes_combined.txt", 'w') as f:
+            with open(os.path.join(root_dir, 'top10_univariate_genes_combined.txt'), 'w') as f:
                 f.writelines([f"{i}\n" for i in fs_symbols])
     
     if standardize:
@@ -266,7 +266,7 @@ def main(
             thread_limit = threads)
         res['target'] = target
     
-    res.to_csv(f"{root_dir}{result_file}")
+    res.to_csv(os.path.join(root_dir, result_file))
 
 if __name__ == '__main__':
     desc_str = 'Command line tool for evaluating several drug sensitivity models. \

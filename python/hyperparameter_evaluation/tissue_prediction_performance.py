@@ -29,7 +29,7 @@ if script_path is None:
 
 dsc_spec = importlib.util.spec_from_file_location(
     'dataset_collections', 
-    os.path.join(script_path) 'python/utilities/cancer_dataset_collections.py')
+    os.path.join(script_path, 'python/utilities/cancer_dataset_collections.py')
 )
 dsc = importlib.util.module_from_spec(dsc_spec)
 sys.modules['dataset_collections'] = dsc
