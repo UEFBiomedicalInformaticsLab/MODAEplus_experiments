@@ -28,7 +28,7 @@ if script_path is None:
 
 dsc_spec = importlib.util.spec_from_file_location(
     'dataset_collections', 
-    f"{script_path}/python/utilities/cancer_dataset_collections.py"
+    os.path.join(script_path, 'python/utilities/cancer_dataset_collections.py')
 )
 dsc = importlib.util.module_from_spec(dsc_spec)
 sys.modules['dataset_collections'] = dsc
@@ -36,7 +36,7 @@ dsc_spec.loader.exec_module(dsc)
 
 et_spec = importlib.util.spec_from_file_location(
     'evaluation_tools', 
-    f"{script_path}/python/utilities/evaluation_tools.py"
+    os.path.join(script_path, 'python/utilities/evaluation_tools.py')
 )
 et = importlib.util.module_from_spec(et_spec)
 sys.modules['evaluation_tools'] = et
@@ -53,10 +53,10 @@ data_root = os.environ.get('MODAE_DATA_PATH', default = None)
 if data_root is None:
     raise ValueError('Please define MODAE_DATA_PATH')
 
-res_path = f"{output_path}20250410_random_search/pancan_test/"
+res_path = os.path.join(output_path, '20250410_random_search/pancan_test/')
 
-embedding_files = glob.glob(res_path + '*test_cv_*embeddings*.csv.gz')
-prediction_files = glob.glob(res_path + '*test_cv_*predictions*.csv.gz')
+embedding_files = glob.glob(os.path.join(res_path, '*test_cv_*embeddings*.csv.gz'))
+prediction_files = glob.glob(os.path.join(res_path, '*test_cv_*predictions*.csv.gz'))
 
 from evaluation_tools import load_results
 
@@ -269,8 +269,8 @@ if False:
 
 #%% Save Silhouette
 
-cl_silh_df.to_csv(res_path + 'cl_silhouette.csv.gz')
-patient_silh_df.to_csv(res_path + 'patient_silhouette.csv.gz')
+cl_silh_df.to_csv(os.path.join(res_path, 'cl_silhouette.csv.gz'))
+patient_silh_df.to_csv(os.path.join(res_path, 'patient_silhouette.csv.gz'))
 
 
 #%% STNR
@@ -322,8 +322,8 @@ sr_stnr_df = pd.concat(sr_stnr_list)
 
 #%% Save stnr
 
-dr_stnr_df.to_csv(res_path + 'drug_response_neighborhood_signal_to_noise.csv.gz')
-sr_stnr_df.to_csv(res_path + 'survival_event_neighborhood_signal_to_noise.csv.gz')
+dr_stnr_df.to_csv(os.path.join(res_path, 'drug_response_neighborhood_signal_to_noise.csv.gz'))
+sr_stnr_df.to_csv(os.path.join(res_path, 'survival_event_neighborhood_signal_to_noise.csv.gz'))
 
 #%% neighborhood mean difference
 
@@ -406,8 +406,8 @@ sr_mdiff_df = pd.concat(sr_mdiff, axis = 0)
 
 #%% Save real mdiff
 
-dr_mdiff_df.to_csv(res_path + 'drug_response_neighborhood_mean_diff.csv.gz')
-sr_mdiff_df.to_csv(res_path + 'survival_event_neighborhood_mean_diff.csv.gz')
+dr_mdiff_df.to_csv(os.path.join(res_path, 'drug_response_neighborhood_mean_diff.csv.gz'))
+sr_mdiff_df.to_csv(os.path.join(res_path, 'survival_event_neighborhood_mean_diff.csv.gz'))
 
 #%% Prediction signal to noise ratios between local and global neighborhood
 dr_stnr_list = []
@@ -492,8 +492,8 @@ sr_stnr_df = pd.concat(sr_stnr_list)
 
 #%% Save STNR
 
-dr_stnr_df.to_csv(res_path + 'predicted_drug_response_neighborhood_signal_to_noise.csv.gz')
-sr_stnr_df.to_csv(res_path + 'predicted_survival_risk_neighborhood_signal_to_noise.csv.gz')
+dr_stnr_df.to_csv(os.path.join(res_path, 'predicted_drug_response_neighborhood_signal_to_noise.csv.gz'))
+sr_stnr_df.to_csv(os.path.join(res_path, 'predicted_survival_risk_neighborhood_signal_to_noise.csv.gz'))
 
 #%% Prediction based mean difference
 from multiprocessing import Pool
@@ -588,8 +588,8 @@ sr_mdiff_df = pd.concat(sr_mdiff_list)
 
 #%% save predicted mdiff
 
-dr_mdiff_df.to_csv(res_path + 'predicted_drug_response_neighborhood_mean_diff.csv.gz')
-sr_mdiff_df.to_csv(res_path + 'predicted_survival_event_neighborhood_mean_diff.csv.gz')
+dr_mdiff_df.to_csv(os.path.join(res_path, 'predicted_drug_response_neighborhood_mean_diff.csv.gz'))
+sr_mdiff_df.to_csv(os.path.join(res_path, 'predicted_survival_event_neighborhood_mean_diff.csv.gz'))
 
 #%% Prediction-based Silhouette
 
@@ -698,5 +698,5 @@ sr_silh_df = pd.concat(sr_silh_list)
 
 #%% Save predicted silhouette
 
-dr_silh_df.to_csv(res_path + 'predicted_drug_response_silhouette.csv.gz')
-sr_silh_df.to_csv(res_path + 'predicted_survival_event_silhouette.csv.gz')
+dr_silh_df.to_csv(os.path.join(res_path, 'predicted_drug_response_silhouette.csv.gz'))
+sr_silh_df.to_csv(os.path.join(res_path, 'predicted_survival_event_silhouette.csv.gz'))

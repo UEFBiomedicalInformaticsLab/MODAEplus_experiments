@@ -29,7 +29,7 @@ if script_path is None:
 
 dsc_spec = importlib.util.spec_from_file_location(
     'dataset_collections', 
-    f"{script_path}/python/utilities/cancer_dataset_collections.py"
+    os.path.join(script_path, 'python/utilities/cancer_dataset_collections.py')
 )
 dsc = importlib.util.module_from_spec(dsc_spec)
 sys.modules['dataset_collections'] = dsc
@@ -37,7 +37,7 @@ dsc_spec.loader.exec_module(dsc)
 
 et_spec = importlib.util.spec_from_file_location(
     'evaluation_tools', 
-    f"{script_path}/python/utilities/evaluation_tools.py"
+    os.path.join(script_path, 'python/utilities/evaluation_tools.py')
 )
 et = importlib.util.module_from_spec(et_spec)
 sys.modules['evaluation_tools'] = et
@@ -57,16 +57,14 @@ data_root = os.environ.get('MODAE_DATA_PATH', default = None)
 if data_root is None:
     raise ValueError('Please define MODAE_DATA_PATH')
 
-res_path = f"{output_path}20250410_random_search/pancan_test/"
+res_path = os.path.join(output_path, '20250410_random_search/pancan_test/')
 
 run_date = re.sub('[a-z_]*/[a-z_]*/$', '', res_path)
 run_date = re.sub('^.*/', '', run_date)
-#dss_sensitivity = int(run_date) >= 20250313
 exclude_metas_data = int(run_date) >= 20250527 and int(run_date) <= 20250527
 
-#embedding_files = glob.glob(res_path + '*test_cv_*embeddings*.csv.gz')
-prediction_files = glob.glob(res_path + '*test_cv_*predictions*.csv.gz')
-ps_prediction_files = glob.glob(res_path + '*ps_cv_*predictions*.csv.gz')
+prediction_files = glob.glob(os.path.join(res_path, '*test_cv_*predictions*.csv.gz'))
+ps_prediction_files = glob.glob(os.path.join(res_path, '*ps_cv_*predictions*.csv.gz'))
 
 if False:
     complete_preds = [i for i in prediction_files if 'fold' not in i]
@@ -255,8 +253,8 @@ mse_df = pd.concat(mse_df_list, axis = 0)
 
 #%% save r2
 
-r2_df.to_csv(res_path + 'drug_response_r2.csv.gz')
-mse_df.to_csv(res_path + 'drug_response_mse.csv.gz')
+r2_df.to_csv(os.path.join(res_path, 'drug_response_r2.csv.gz'))
+mse_df.to_csv(os.path.join(res_path, 'drug_response_mse.csv.gz'))
 
 #%% parameter search R^2 scores
 
@@ -274,8 +272,8 @@ mse_df = pd.concat(mse_df_list, axis = 0)
 
 #%% save parameter search r2
 
-r2_df.to_csv(res_path + 'ps_drug_response_r2.csv.gz')
-mse_df.to_csv(res_path + 'ps_drug_response_mse.csv.gz')
+r2_df.to_csv(os.path.join(res_path, 'ps_drug_response_r2.csv.gz'))
+mse_df.to_csv(os.path.join(res_path, 'ps_drug_response_mse.csv.gz'))
 
 #%% Mean MSE
 
@@ -378,7 +376,7 @@ if False:
         for i in prediction_dict.keys():
             r2_df_list.append(mapper(prediction_dict[i]))
     r2_df = pd.concat(r2_df_list, axis = 0)
-    r2_df.to_csv(res_path + 'adjusted_overall_drug_response_r2.csv.gz')
+    r2_df.to_csv(os.path.join(res_path, 'adjusted_overall_drug_response_r2.csv.gz'))
 
 #%% drug-wise R^2 scores
 if False:
@@ -480,7 +478,7 @@ if False:
     
     #%% save r2
     
-    r2_df.to_csv(res_path + 'adjusted_drug_response_r2.csv.gz')
+    r2_df.to_csv(os.path.join(res_path, 'adjusted_drug_response_r2.csv.gz'))
     
 #%% prediction correlations
 
@@ -557,4 +555,4 @@ cor_df = pd.concat(cor_df_list, axis = 0)
 
 #%% save r2
 
-cor_df.to_csv(res_path + 'drug_response_cor.csv.gz')
+cor_df.to_csv(os.path.join(res_path, 'drug_response_cor.csv.gz'))

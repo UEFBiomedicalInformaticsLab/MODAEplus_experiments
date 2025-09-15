@@ -29,7 +29,7 @@ if script_path is None:
 
 dsc_spec = importlib.util.spec_from_file_location(
     'dataset_collections', 
-    f"{script_path}/python/utilities/cancer_dataset_collections.py"
+    os.path.join(script_path) 'python/utilities/cancer_dataset_collections.py')
 )
 dsc = importlib.util.module_from_spec(dsc_spec)
 sys.modules['dataset_collections'] = dsc
@@ -37,7 +37,7 @@ dsc_spec.loader.exec_module(dsc)
 
 et_spec = importlib.util.spec_from_file_location(
     'evaluation_tools', 
-    f"{script_path}/python/utilities/evaluation_tools.py"
+    os.path.join(script_path, 'python/utilities/evaluation_tools.py')
 )
 et = importlib.util.module_from_spec(et_spec)
 sys.modules['evaluation_tools'] = et
@@ -57,7 +57,7 @@ data_root = os.environ.get('MODAE_DATA_PATH', default = None)
 if data_root is None:
     raise ValueError('Please define MODAE_DATA_PATH')
 
-res_path = f"{output_path}20250410_random_search/pancan_test/"
+res_path = os.path.join(output_path, '20250410_random_search/pancan_test/')
 
 run_date = re.sub('[a-z_]*/[a-z_]*/$', '', res_path)
 run_date = re.sub('^.*/', '', run_date)
@@ -70,9 +70,8 @@ include_metas_labels = (
 )
 exclude_metas_data = int(run_date) >= 20250527 and int(run_date) <= 20250527
 
-#embedding_files = glob.glob(res_path + '*test_cv_*embeddings*.csv.gz')
-prediction_files = glob.glob(res_path + '*test_cv_*predictions*.csv.gz')
-ps_prediction_files = glob.glob(res_path + '*ps_cv_*predictions*.csv.gz')
+prediction_files = glob.glob(os.path.join(res_path, '*test_cv_*predictions*.csv.gz'))
+ps_prediction_files = glob.glob(os.path.join(res_path, '*ps_cv_*predictions*.csv.gz'))
 
 if False:
     prediction_files = prediction_files[:10]
@@ -291,7 +290,7 @@ with Pool(processes = n_workers) as mp:
         class_df_list.append(res)
 class_df = pd.concat(class_df_list, axis = 0)
 
-class_df.to_csv(res_path + 'tissue_classifier_performance.csv.gz')
+class_df.to_csv(os.path.join(res_path, 'tissue_classifier_performance.csv.gz'))
 
 class_df_list = []
 with Pool(processes = n_workers) as mp:
@@ -301,4 +300,4 @@ with Pool(processes = n_workers) as mp:
         class_df_list.append(res)
 class_df = pd.concat(class_df_list, axis = 0)
 
-class_df.to_csv(res_path + 'ps_tissue_classifier_performance.csv.gz')
+class_df.to_csv(os.path.join(res_path, 'ps_tissue_classifier_performance.csv.gz'))

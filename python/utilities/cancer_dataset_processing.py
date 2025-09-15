@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import json
+import os
 import numpy as np
 from sklearn.preprocessing import StandardScaler
 from copy import copy
@@ -78,7 +79,7 @@ def process_and_serialize(
         patient_info['rownames_train'] = data_dict['patient_rows'][patient_train_ind]
         patient_info['rownames_test'] = data_dict['patient_rows'][patient_test_ind]
         
-        fn = f"{serialized_data_path}patient_data.tfrecords"
+        fn = os.path.join(serialized_data_path, 'patient_data.tfrecords')
         patient_feature_spec = serialize_dataset_to_file(
             filename = fn,
             expression = patient_data['x_train'], 
@@ -148,7 +149,8 @@ def process_and_serialize(
             cl_spec['model_spec']['class_number'] = cl_u.shape[0]
     serialized_data_spec = JSONFeatureSpecEncoder(spec_dict)
     
-    handle = open(f"{serialized_data_path}serialized_data_spec.json", 'w')
+    fnw = os.path.join(serialized_data_path, 'serialized_data_spec.json')
+    handle = open(fnw, 'w')
     handle.write(json.dumps(serialized_data_spec, cls = json.JSONEncoder))
     handle.close()
     

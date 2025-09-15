@@ -21,7 +21,7 @@ if script_path is None:
 
 dsp_spec = importlib.util.spec_from_file_location(
     'dataset_processing', 
-    f"{script_path}/python/utilities/cancer_dataset_processing.py"
+    os.path.join(script_path, 'python/utilities/cancer_dataset_processing.py')
 )
 dsp = importlib.util.module_from_spec(dsp_spec)
 sys.modules['dataset_processing'] = dsp
@@ -38,11 +38,11 @@ data_root = os.environ.get('MODAE_DATA_PATH', default = None)
 if data_root is None:
     raise ValueError('Please define MODAE_DATA_PATH')
 
-res_path = output_path + '20250410_random_search/pancan_test/'
+res_path = os.path.join(output_path, '20250410_random_search/pancan_test/')
 
-res_path = res_path + 'external_evaluation/'
+res_path = os.path.join(res_path, 'external_evaluation/')
 
-embedding_files = glob.glob(res_path + '*validation_embeddings.csv.gz')
+embedding_files = glob.glob(os.path.join(res_path, '*validation_embeddings.csv.gz'))
 
 embeddings_list = []
 for f in embedding_files:
@@ -62,7 +62,7 @@ for i in np.arange(len(embeddings_list)):
 embeddings_df = pd.concat(embeddings_list, axis = 0)
 embeddings_df.value_counts('dataset')
 
-prediction_files = glob.glob(res_path + '*validation_predictions.csv.gz')
+prediction_files = glob.glob(os.path.join(res_path, '*validation_predictions.csv.gz'))
 
 prediction_list = []
 for f in prediction_files:
@@ -85,12 +85,12 @@ predictions_df.value_counts('dataset')
 
 #%% TCGA and CCLE data
 
-patient_expression_root_dir = f"{data_root}tcga/"
-cell_line_expression_root_dir = f"{data_root}ccle/"
-cell_line_drug_response_root_dir = f"{data_root}ctrp/"
-xia_path = f"{data_root}drug_sensitivity_xia/"
-bruna_path = f"{data_root}breast_pdtc_bruna/"
-gao_path = f"{data_root}pan_cancer_pdx_gao/"
+patient_expression_root_dir = os.path.join(data_root, 'tcga/')
+cell_line_expression_root_dir = os.path.join(data_root, 'ccle/')
+cell_line_drug_response_root_dir = os.path.join(data_root, 'ctrp/')
+xia_path = os.path.join(data_root, 'drug_sensitivity_xia/')
+bruna_path = os.path.join(data_root, 'breast_pdtc_bruna/')
+gao_path = os.path.join(data_root, 'pan_cancer_pdx_gao/')
 
 #%% CTRP or CCLE?
 '''
@@ -102,7 +102,7 @@ if prediction_cols == 24:
     raise NotImplementedError('CCLE based validation is not implemented yet.')
 elif prediction_cols == 545:
     response_dataset = 'ctrp'
-    with open(f"{cell_line_drug_response_root_dir}drug_names.txt", 'r') as f:
+    with open(os.path.join(cell_line_drug_response_root_dir, 'drug_names.txt'), 'r') as f:
         train_drugs = f.read().splitlines()
     train_drugs = map(str.lower, train_drugs)
     train_drugs = [re.sub('\\(.*?\\)', '', i) for i in train_drugs]
@@ -111,7 +111,7 @@ elif prediction_cols == 545:
     train_drugs = np.array(['tipifarnib' if re.search('tipifarnib', i) else i for i in train_drugs])
 elif prediction_cols == 544:
     response_dataset = 'ctrp' # Xia data
-    with open(f"{xia_path}processed_drug_names.txt", 'r') as f:
+    with open(os.path.join(xia_path, 'processed_drug_names.txt'), 'r') as f:
         train_drugs = f.read().splitlines()
     train_drugs = map(str.lower, train_drugs)
     train_drugs = [re.sub('\\(.*?\\)', '', i) for i in train_drugs]
@@ -127,11 +127,11 @@ else:
 #%% Bruna drug response data
 
 pdtc_drug_response = pd.read_csv(
-    f"{bruna_path}DrugResponsesAUCModels.txt", 
+    os.path.join(bruna_path, 'DrugResponsesAUCModels.txt'), 
     header = 0, sep = "\t")
 
 pdtx_drug_response = pd.read_csv(
-    f"{bruna_path}DrugResponsesAUCSamples.txt", 
+    os.path.join(bruna_path, 'DrugResponsesAUCSamples.txt'), 
     header = 0, sep = "\t")
 
 #pdtx_drug_response.columns
@@ -150,7 +150,7 @@ if not np.isin(pdtx_drug_response['drug'].unique(), pdtc_drug_response['drug'].u
 #%% Gao response data
 
 gao_drug_response = pd.read_excel(
-    f"{gao_path}41591_2015_BFnm3954_MOESM10_ESM.xlsx", 
+    os.path.join(gao_path, '41591_2015_BFnm3954_MOESM10_ESM.xlsx'),  
     sheet_name = "PCT curve metrics"
 )
 gao_drug_response['drug'] = gao_drug_response['Treatment'].map(str.lower)
@@ -234,5 +234,5 @@ for dataset, dr_true_df, target_col, id_col in val_set_list:
             pd.RangeIndex(0,1)))
 
 dr_perf_ext_df = pd.concat(dr_perf_ext_list)
-dr_perf_ext_df.to_csv(f"{res_path}external_drug_response_validation_performance.csv")
+dr_perf_ext_df.to_csv(os.path.join(res_path, 'external_drug_response_validation_performance.csv'))
 

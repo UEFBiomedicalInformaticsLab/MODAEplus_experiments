@@ -28,7 +28,7 @@ if script_path is None:
 
 et_spec = importlib.util.spec_from_file_location(
     'evaluation_tools', 
-    f"{script_path}/python/utilities/evaluation_tools.py"
+    os.path.join(script_path, 'python/utilities/evaluation_tools.py')
 )
 et = importlib.util.module_from_spec(et_spec)
 sys.modules['evaluation_tools'] = et
@@ -47,10 +47,10 @@ data_root = os.environ.get('MODAE_DATA_PATH', default = None)
 if data_root is None:
     raise ValueError('Please define MODAE_DATA_PATH')
 
-res_path = f"{output_path}20250410_random_search/pancan_test/"
+res_path = os.path.join(output_path, '20250410_random_search/pancan_test/')
 
-embedding_files = glob.glob(res_path + '*test_cv_*embeddings*.csv.gz')
-ps_embedding_files = glob.glob(res_path + '*ps_cv_*embeddings*.csv.gz')
+embedding_files = glob.glob(os.path.join(res_path,'*test_cv_*embeddings*.csv.gz'))
+ps_embedding_files = glob.glob(os.path.join(res_path, '*ps_cv_*embeddings*.csv.gz'))
 
 from evaluation_tools import load_results
 
@@ -59,14 +59,14 @@ ps_embeddings_dict = load_results(ps_embedding_files)
 
 #%% Parameter dicts
 
-parameter_files = glob.glob(res_path + '*parameters*.csv')
+parameter_files = glob.glob(os.path.join(res_path,'*parameters*.csv'))
 
 if len(parameter_files):
     from evaluation_tools import get_kwargs
     parameters_list = [get_kwargs(i) for i  in parameter_files]
     parameters_dict = dict([(i['task_id'], i) for i in parameters_list])
 else:
-    parameter_files = glob.glob(res_path + '*parameters*.json')
+    parameter_files = glob.glob(os.path.join(res_path, '*parameters*.json'))
     from modae.parsing_utilities import modae_args_json_decoder
     import json
     parameters_list = []
@@ -170,7 +170,7 @@ with Pool(processes = n_workers, maxtasksperchild = 1) as mp:
     ):
         batch_df_list.append(res)
 batch_df = pd.concat(batch_df_list, axis = 0)
-batch_df.to_csv(res_path + 'batch_predictions.csv')
+batch_df.to_csv(os.path.join(res_path, 'batch_predictions.csv'))
 
 #%%
 
@@ -182,4 +182,4 @@ with Pool(processes = n_workers, maxtasksperchild = 1) as mp:
     ):
         ps_batch_df_list.append(res)
 ps_batch_df = pd.concat(ps_batch_df_list, axis = 0)
-ps_batch_df.to_csv(res_path + 'ps_batch_predictions.csv')
+ps_batch_df.to_csv(os.path.join(res_path, 'ps_batch_predictions.csv'))

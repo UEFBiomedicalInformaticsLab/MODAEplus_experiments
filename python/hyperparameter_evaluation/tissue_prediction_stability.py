@@ -29,7 +29,7 @@ if script_path is None:
 
 dsc_spec = importlib.util.spec_from_file_location(
     'dataset_collections', 
-    f"{script_path}/python/utilities/cancer_dataset_collections.py"
+    os.path.join(script_path, 'python/utilities/cancer_dataset_collections.py')
 )
 dsc = importlib.util.module_from_spec(dsc_spec)
 sys.modules['dataset_collections'] = dsc
@@ -37,7 +37,7 @@ dsc_spec.loader.exec_module(dsc)
 
 et_spec = importlib.util.spec_from_file_location(
     'evaluation_tools', 
-    f"{script_path}/python/utilities/evaluation_tools.py"
+    os.path.join(script_path, 'python/utilities/evaluation_tools.py')
 )
 et = importlib.util.module_from_spec(et_spec)
 sys.modules['evaluation_tools'] = et
@@ -55,10 +55,10 @@ data_root = os.environ.get('MODAE_DATA_PATH', default = None)
 if data_root is None:
     raise ValueError('Please define MODAE_DATA_PATH')
 
-res_path = f"{output_path}20250410_random_search/pancan_test/"
+res_path = os.path.join(output_path, '20250410_random_search/pancan_test/')
 
-prediction_files = glob.glob(res_path + '*test_cv_*predictions*.csv.gz')
-ps_prediction_files = glob.glob(res_path + '*ps_cv_*predictions*.csv.gz')
+prediction_files = glob.glob(os.path.join(res_path, '*test_cv_*predictions*.csv.gz'))
+ps_prediction_files = glob.glob(os.path.join(res_path, '*ps_cv_*predictions*.csv.gz'))
 
 from evaluation_tools import load_results, result_file_dict
 
@@ -77,7 +77,7 @@ p_df = next(iter(load_results(prediction_dict['1']).values()))
 n_classes = p_df.filter(regex = 'class_pred_[0-9]+').shape[1]
 
 #%% Cell-line meta-stasis info 
-fn = f"{data_root}ccle/Model_augmented.csv"
+fn = os.path.join(data_root, 'ccle/Model_augmented.csv')
 cl_info = pd.read_csv(fn, index_col = 'ModelID')
 
 cl_info['PrimaryOrMetastasis'].value_counts()
@@ -197,7 +197,7 @@ for i in prediction_dict.keys():
                         
 within_class_stability_df = pd.concat(within_class_stability_df_list, axis = 0)
 
-within_class_stability_df.to_csv(f"{res_path}tissue_classifier_stability_within_run.csv.gz")
+within_class_stability_df.to_csv(os.path.join(res_path, 'tissue_classifier_stability_within_run.csv.gz'))
 
 #%% Between run stability (different initialization, different_data)
 
@@ -300,7 +300,7 @@ if False:
                                         }))
                                             
         between_class_stability_df = pd.concat(between_class_stability_df_list, axis = 0)
-        between_class_stability_df.to_csv(f"{res_path}tissue_classifier_stability_between_run.csv.gz")
+        between_class_stability_df.to_csv(os.path.join(res_path, 'tissue_classifier_stability_between_run.csv.gz'))
 
 #%% Between task stability
 if False:
@@ -400,4 +400,4 @@ if False:
                                 }))
     
     class_df = pd.concat(class_df_list, axis = 0)
-    class_df.to_csv(f"{res_path}tissue_classifier_stability_between_task.csv.gz")
+    class_df.to_csv(os.path.join(res_path, 'tissue_classifier_stability_between_task.csv.gz'))

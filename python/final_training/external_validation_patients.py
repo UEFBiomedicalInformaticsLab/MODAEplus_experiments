@@ -19,7 +19,7 @@ if script_path is None:
 
 dsc_spec = importlib.util.spec_from_file_location(
     'dataset_collections', 
-    f"{script_path}/python/utilities/cancer_dataset_collections.py"
+    os.path.join(script_path, 'python/utilities/cancer_dataset_collections.py')
 )
 dsc = importlib.util.module_from_spec(dsc_spec)
 sys.modules['dataset_collections'] = dsc
@@ -27,7 +27,7 @@ dsc_spec.loader.exec_module(dsc)
 
 dsp_spec = importlib.util.spec_from_file_location(
     'dataset_processing', 
-    f"{script_path}/python/utilities/cancer_dataset_processing.py"
+    os.path.join(script_path, 'python/utilities/cancer_dataset_processing.py')
 )
 dsp = importlib.util.module_from_spec(dsp_spec)
 sys.modules['dataset_processing'] = dsp
@@ -69,7 +69,7 @@ def do_external_patient_validation(
     external_data_dict['patient_exp'] = new_external_gex_mat# * 0.
     
     # Serialize external data
-    external_spec_file = f"{external_serialized_data_path}serialized_data_spec.json"
+    external_spec_file = os.path.join(external_serialized_data_path, 'serialized_data_spec.json')
     if False and os.path.exists(external_spec_file):
         handle = open(external_spec_file, 'r')
         external_serialized_data_spec = json.load(handle)

@@ -20,7 +20,7 @@ if script_path is None:
 
 dsc_spec = importlib.util.spec_from_file_location(
     'dataset_collections', 
-    f"{script_path}/python/utilities/cancer_dataset_collections.py"
+    os.path.join(script_path, 'python/utilities/cancer_dataset_collections.py')
 )
 dsc = importlib.util.module_from_spec(dsc_spec)
 sys.modules['dataset_collections'] = dsc
@@ -28,7 +28,7 @@ dsc_spec.loader.exec_module(dsc)
 
 dsp_spec = importlib.util.spec_from_file_location(
     'dataset_processing', 
-    f"{script_path}/python/utilities/cancer_dataset_processing.py"
+    os.path.join(script_path, 'python/utilities/cancer_dataset_processing.py')
 )
 dsp = importlib.util.module_from_spec(dsp_spec)
 sys.modules['dataset_processing'] = dsp
@@ -36,7 +36,7 @@ dsp_spec.loader.exec_module(dsp)
 
 et_spec = importlib.util.spec_from_file_location(
     'evaluation_tools', 
-    f"{script_path}/python/utilities/evaluation_tools.py"
+    os.path.join(script_path, 'python/utilities/evaluation_tools.py')
 )
 et = importlib.util.module_from_spec(et_spec)
 sys.modules['evaluation_tools'] = et
@@ -44,7 +44,7 @@ et_spec.loader.exec_module(et)
 
 evp_spec = importlib.util.spec_from_file_location(
     'external_evaluation', 
-    f"{script_path}/python/final_training/external_validation_patients.py"
+    os.path.join(script_path, 'python/final_training/external_validation_patients.py')
 )
 evp = importlib.util.module_from_spec(evp_spec)
 sys.modules['external_validation_patients'] = evp
@@ -83,8 +83,8 @@ data_root = os.environ.get('MODAE_DATA_PATH', default = None)
 if data_root is None:
     raise ValueError('Please define MODAE_DATA_PATH')
 
-res_path = f"{output_path}20250410_random_search/pancan_test/"
-#res_path = f"{output_path}20250410_random_search/pancan_ablation_test/"
+res_path = os.path.join(output_path, '20250410_random_search/pancan_test/')
+#res_path = os.path.join(output_path, '20250410_random_search/pancan_ablation_test/')
 
 save_weights = True
 weight_analysis = True
@@ -96,23 +96,23 @@ if 'ablation' in res_path:
     #ablation_string = 'no_deconfounding'
     #ablation_string = 'no_deconfounding'
     ablation_string = 'no_private_without_deconfounding' # 'no' is a typo
-    best_parameter_file = glob.glob(f"{res_path}*{ablation_string}_parameters_taskNone.json")[0]
+    best_parameter_file = glob.glob(os.path.join(res_path, f"*{ablation_string}_parameters_taskNone.json"))[0]
     parameter_json = True
-    res_path = f"{res_path}{ablation_string}/"
+    res_path = os.path.join(res_path, ablation_string)
     save_original_expression = False
 else:
     # Should select by name
-    fn = glob.glob(res_path + '*best_task.txt')
+    fn = glob.glob(os.path.join(res_path, '*best_task.txt'))
     with open(fn[0], 'r') as f:
         best_task = int(f.readlines()[0])
     try:
-        best_parameter_file = glob.glob(f"{res_path}*parameters_task{best_task}.csv")[0]
+        best_parameter_file = glob.glob(os.path.join(res_path, f"*parameters_task{best_task}.csv"))[0]
         parameter_json = False
     except IndexError:
-        best_parameter_file = glob.glob(f"{res_path}*parameters_task{best_task}.json")[0]
+        best_parameter_file = glob.glob(os.path.join(res_path, f"*parameters_task{best_task}.json"))[0]
         parameter_json = True
 
-os.makedirs(f"{res_path}external_evaluation/", exist_ok = True)
+os.makedirs(os.path.join(res_path, 'external_evaluation/'), exist_ok = True)
 
 '''
 Note that these must match the training settings. 
@@ -216,29 +216,29 @@ else:
     raise ValueError('res_path format does not match known dataset')
 
 if save_original_expression:
-    os.makedirs(f"{res_path}external_evaluation/internal/", exist_ok = True)
+    os.makedirs(os.path.join(res_path, 'external_evaluation/internal/'), exist_ok = True)
     # Save filtered datasets
     patient_exp_df = pd.DataFrame(
         data_dict['patient_exp'], 
         columns = data_dict['gene_ids'], 
         index = data_dict['patient_rows']
     )
-    patient_exp_df.to_csv(f"{res_path}external_evaluation/internal/patient_mrna.csv.gz")
+    patient_exp_df.to_csv(os.path.join(res_path, 'external_evaluation/internal/patient_mrna.csv.gz'))
     cl_exp_df = pd.DataFrame(
         data_dict['cl_exp'], 
         columns = data_dict['gene_ids'], 
         index = data_dict['cl_exp_rows']
     )
-    cl_exp_df.to_csv(f"{res_path}external_evaluation/internal/cl_mrna.csv.gz")
+    cl_exp_df.to_csv(os.path.join(res_path, 'external_evaluation/internal/cl_mrna.csv.gz'))
     # Save patient cancer types
-    fn = f"{res_path}external_evaluation/internal/patient_types.txt"
+    fn = os.path.join(res_path, 'external_evaluation/internal/patient_types.txt')
     with open(fn, 'w') as f:
         f.write('\n'.join(data_dict['patient_cancer_type'].tolist()))
 
 if tissue_classifier:
-    os.makedirs(f"{res_path}external_evaluation/", exist_ok = True)
+    os.makedirs(os.path.join(res_path, 'external_evaluation/'), exist_ok = True)
     class_map_df = pd.DataFrame(data_dict['class_map'].items(), columns = ['name', 'key'])
-    class_map_df.to_csv(f"{res_path}external_evaluation/class_map.csv")
+    class_map_df.to_csv(os.path.join(res_path, 'external_evaluation/class_map.csv'))
     
 
 search_kwargs['data_dict'] = data_dict
@@ -251,9 +251,9 @@ from modae.data_utilities import JSONFeatureSpecDecoder
 import json
 from dataset_processing import process_and_serialize
 
-internal_serialized_data_path = f"{res_path}external_evaluation/internal/"
+internal_serialized_data_path = os.path.join(res_path, 'external_evaluation/internal/')
 
-spec_file = f"{internal_serialized_data_path}serialized_data_spec.json"
+spec_file = os.path.join(internal_serialized_data_path, 'serialized_data_spec.json')
 
 os.makedirs(internal_serialized_data_path, exist_ok = True)
 model_args = search_kwargs['model_args']
@@ -439,7 +439,7 @@ Run the following block to test trained models
 load_weights = False
 if load_weights:
     import gzip
-    weight_fn = f"{res_path}external_evaluation/final_weights.json.gz"
+    weight_fn = os.path.join(res_path, 'external_evaluation/final_weights.json.gz')
     os.path.exists(weight_fn)
     with gzip.open(weight_fn, 'r') as handle:
         final_weights = json.load(handle)
@@ -476,7 +476,7 @@ for d, s in zip(diagnostics, diagnostics_stage):
 if len(diagnostics) > 0:
     diagnostics = pd.concat(diagnostics, axis = 0)
     diagnostics.to_csv(
-        f"{res_path}external_evaluation/diagnostics.csv.gz", 
+        os.path.join(res_path, 'external_evaluation/diagnostics.csv.gz'), 
         na_rep = 'NA', 
         header = True, 
         index = False
@@ -514,13 +514,13 @@ datasets = [
         'dataset' : internal_patient_dataset_batched, 
         'rows' : internal_patient_rows, 
         'name' : internal_dataset, 
-        'file_string' : f"{res_path}external_evaluation/internal_survival_validation_"
+        'file_string' : os.path.join(res_path, 'external_evaluation/internal_survival_validation_')
     },
     {
         'dataset' : ccle_cl_dataset_batched, 
         'rows' : ccle_cl_rows, 
         'name' : 'ccle', 
-        'file_string' : f"{res_path}external_evaluation/internal_drug_response_validation_"
+        'file_string' : os.path.join(res_path, 'external_evaluation/internal_drug_response_validation_')
     }
 ]
 
@@ -555,7 +555,7 @@ for trained, weights, weight_name in zip(trained_list, weight_list, weight_names
     if save_weights:
         weights = model.get_weights()
         weights_encoded = JSONWeightEncoder(weights)
-        weight_fn = f"{res_path}external_evaluation/{weight_name}_weights.json.gz"
+        weight_fn = os.path.join(res_path, f"external_evaluation/{weight_name}_weights.json.gz")
         handle = gzip.open(weight_fn, 'wt')
         handle.write(json.dumps(weights_encoded, cls = json.JSONEncoder))
         handle.close()
@@ -602,7 +602,7 @@ if weight_analysis:
     for trained, weights, weight_name in zip(trained_list, weight_list, weight_names):
         if not trained: 
             continue
-        weight_fn = f"{res_path}external_evaluation/{weight_name}_weights.json.gz"
+        weight_fn = os.path.join(res_path, f"external_evaluation/{weight_name}_weights.json.gz")
         handle = gzip.open(weight_fn, 'r')
         weight_json = json.load(handle)
         handle.close()
@@ -628,7 +628,7 @@ if weight_analysis:
             ('drug_layer1_w', 'drug_layer1_b', 'drug_layer2_w', 'drug_layer2_b')
         )
         for pi, pn in weight_iterator:
-            p_fn = f"{res_path}external_evaluation/{weight_name}_{pn}.png"
+            p_fn = os.path.join(res_path, f"external_evaluation/{weight_name}_{pn}.png")
             fig = pi.get_figure()
             fig.savefig(p_fn)
 
@@ -639,7 +639,7 @@ if external_dataset is not None:
     epatient_dict = do_external_patient_validation(
         external_dataset = external_dataset, 
         data_dict = data_dict, 
-        external_serialized_data_path = internal_serialized_data_path + '../external/', 
+        external_serialized_data_path = os.path.join(internal_serialized_data_path, '../external/'), 
         search_kwargs = search_kwargs, 
         std_scalers = std_scalers,
         internal_result = result, 
@@ -647,12 +647,12 @@ if external_dataset is not None:
     )
     
     epatient_dict['embedding'].to_csv(
-        f"{res_path}external_evaluation/external_survival_validation_embeddings.csv.gz", 
+        os.path.join(res_path, 'external_evaluation/external_survival_validation_embeddings.csv.gz'), 
         na_rep = 'NA', 
         header = True, 
         index = True)
     epatient_dict['pred'].to_csv(
-        f"{res_path}external_evaluation/external_survival_validation_predictions.csv.gz", 
+        os.path.join(res_path, 'external_evaluation/external_survival_validation_predictions.csv.gz'), 
         na_rep = 'NA', 
         header = True, 
         index = True)
@@ -691,7 +691,7 @@ if external_dataset is not None:
             external_res['confounder_alignment_norm']
         ) 
     })
-    result_df.to_csv(f"{res_path}external_evaluation/external_survival_validation_res.csv")
+    result_df.to_csv(os.path.join(res_path, 'external_evaluation/external_survival_validation_res.csv'))
 
 #%% Bruna PDTC and PDTX gene-expression datasets
 from dataset_collections import get_bruna_pdtc, get_bruna_pdtx, get_gao_pdx
@@ -725,8 +725,8 @@ for dd, name in zip(
         [pdtc_data_dict, pdtx_data_dict, gao_data_dict], 
         ['bruna_pdtc', 'bruna_pdtx', 'gao_pdtx']
 ):
-    serialized_ext_data_path = f"{internal_serialized_data_path}../{name}/"
-    ext_spec_file = f"{serialized_ext_data_path}serialized_data_spec.json"
+    serialized_ext_data_path = os.path.join(internal_serialized_data_path, f"../{name}/")
+    ext_spec_file = os.path.join(serialized_ext_data_path, 'serialized_data_spec.json')
     os.makedirs(serialized_ext_data_path, exist_ok = True)
     model_args = search_kwargs['model_args']
     serialized_ext_data_spec = process_and_serialize(
@@ -776,12 +776,12 @@ for name, edi in serialized_ext_data_dict.items():
 embeddings = pd.concat(embeddings, axis = 0)
 predictions = pd.concat(predictions, axis = 0)
 embeddings.to_csv(
-    f"{res_path}external_evaluation/external_drug_response_validation_embeddings.csv.gz", 
+    os.path.join(res_path, 'external_evaluation/external_drug_response_validation_embeddings.csv.gz'), 
     na_rep = 'NA', 
     header = True, 
     index = True)
 predictions.to_csv(
-    f"{res_path}external_evaluation/external_drug_response_validation_predictions.csv.gz", 
+    os.path.join(res_path, 'external_evaluation/external_drug_response_validation_predictions.csv.gz'), 
     na_rep = 'NA', 
     header = True, 
     index = True)
@@ -814,8 +814,8 @@ for trial_data_id in ctrdb_datasets:
             new_gex_mat[:,internal_ind] = trial_data_dict['patient_exp'][:,i]
     trial_data_dict['patient_exp'] = new_gex_mat# * 0.
     
-    serialized_ext_data_path = f"{res_path}external_evaluation/{trial_data_id}/"
-    ext_spec_file = f"{serialized_ext_data_path}serialized_data_spec.json"
+    serialized_ext_data_path = os.path.join(res_path, f"external_evaluation/{trial_data_id}/")
+    ext_spec_file = os.path.join(serialized_ext_data_path, 'serialized_data_spec.json')
     os.makedirs(serialized_ext_data_path, exist_ok = True)
     model_args = search_kwargs['model_args']
     serialized_ext_data_spec_json = process_and_serialize(
@@ -856,12 +856,12 @@ for trial_data_id in ctrdb_datasets:
     p['dataset'] = trial_data_id
     
     z.to_csv(
-        f"{serialized_ext_data_path}embeddings.csv.gz", 
+        os.path.join(serialized_ext_data_path, 'embeddings.csv.gz'), 
         na_rep = 'NA', 
         header = True, 
         index = True)
     p.to_csv(
-        f"{serialized_ext_data_path}predictions.csv.gz", 
+        os.path.join(serialized_ext_data_path, 'predictions.csv.gz'), 
         na_rep = 'NA', 
         header = True, 
         index = True)

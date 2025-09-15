@@ -26,13 +26,13 @@ output_path = os.environ.get('MODAE_OUTPUT_PATH', default = None)
 if output_path is None:
     raise ValueError('Please define MODAE_OUTPUT_PATH')
 
-res_path = f"{output_path}20250410_random_search/pancan_test/"
+res_path = os.path.join(output_path, '20250410_random_search/pancan_test/')
 
 #%%
 
-X = pd.read_csv(res_path + 'objective_x.csv', index_col = 0, header = 0)
-y = pd.read_csv(res_path + 'objective_y.csv', index_col = 0, header = 0)
-y_ps = pd.read_csv(res_path + 'ps_objective_y.csv', index_col = 0, header = 0)
+X = pd.read_csv(os.path.join(res_path, 'objective_x.csv'), index_col = 0, header = 0)
+y = pd.read_csv(os.path.join(res_path, 'objective_y.csv'), index_col = 0, header = 0)
+y_ps = pd.read_csv(os.path.join(res_path, 'ps_objective_y.csv'), index_col = 0, header = 0)
 
 X.dropna(axis = 1, inplace = True)
 #%%
@@ -102,8 +102,10 @@ sns.barplot(eln_res_coef, x = 'coefficient', y = 'hyper_parameter', hue = 'targe
 plt.grid()
 #plt.show()
 plt.tight_layout()
-plt.savefig(f"{res_path}../plots/model_tuning_test_coefficients.png", 
-            dpi = 300)
+plt.savefig(
+    os.path.join(res_path, '../plots/model_tuning_test_coefficients.png'), 
+    dpi = 300
+)
 
 #%% ps
 fig, ax = plt.subplots(figsize=(10, 12))
@@ -114,8 +116,10 @@ sns.barplot(ps_eln_res_coef, x = 'coefficient', y = 'hyper_parameter', hue = 'ta
 plt.grid()
 #plt.show()
 plt.tight_layout()
-plt.savefig(f"{res_path}../plots/model_tuning_ps_coefficients.png", 
-            dpi = 300)
+plt.savefig(
+    os.path.join(res_path, '../plots/model_tuning_ps_coefficients.png'), 
+    dpi = 300
+)
 
 #%%
 #fig, ax = plt.subplots(figsize=(10, 12))
