@@ -10,6 +10,10 @@
  // Include modules
 include { MODAE_setup } from './modules/MODAE_setup.nf'
 include { MODAE_run_cv } from './modules/MODAE_run_cv.nf'
+include { evaluate_batch_effect } from './modules/evaluate_batch_effect.nf'
+include { evaluate_drug_sensitivity } from './modules/evaluate_drug_sensitivity.nf'
+include { evaluate_tissue_classification } from './modules/evaluate_tissue_classification.nf'
+include { multi_objective_selection } from './modules/multi_objective_selection.nf'
 
 workflow {
 
@@ -25,4 +29,29 @@ workflow {
         MODAE_setup.out.data_spec_file, 
         search_channel
     )
+
+    // Run additional evaluation
+    evaluate_batch_effect(
+        MODAE_run_cv.out.embedding_files.collect()
+        MODAE_setup.out.data_spec_file
+    )
+    evaluate_drug_sensitivity(
+        MODAE_run_cv.out.prediction_files.collect()
+        MODAE_setup.out.data_spec_file
+    )
+    evaluate_tissue_classification(
+        MODAE_run_cv.out.prediction_files.collect()
+        MODAE_setup.out.data_spec_file
+    )
+
+    // Compute multi-objective performance and identify best setting
+    multi_objective_selection(
+        MODAE_run_cv.out.metric_files.collect(),
+        evaluate_batch_effect.out.collect(), 
+        evaluate_drug_sensitivity.out.collect(), 
+        evaluate_tissue_classification.out.collect()
+    )
+    
+    // Final training 
+    
 }

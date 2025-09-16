@@ -10,9 +10,9 @@ process MODAE_run_cv {
     val task_id
 
     output:
-    path '*embeddings*.csv.gz'
-    path '*predictions*.csv.gz'
-    path '*metrics*.csv'
+    path '*embeddings*.csv.gz', emit: embedding_files
+    path '*predictions*.csv.gz', emit: prediction_files
+    path '*metrics*.csv', emit: metric_files
 
     script:
     """
