@@ -32,15 +32,15 @@ workflow {
 
     // Run additional evaluation
     evaluate_batch_effect(
-        MODAE_run_cv.out.embedding_files.collect()
+        MODAE_run_cv.out.embedding_files.collect(),
         MODAE_setup.out.data_spec_file
     )
     evaluate_drug_sensitivity(
-        MODAE_run_cv.out.prediction_files.collect()
+        MODAE_run_cv.out.prediction_files.collect(),
         MODAE_setup.out.data_spec_file
     )
     evaluate_tissue_classification(
-        MODAE_run_cv.out.prediction_files.collect()
+        MODAE_run_cv.out.prediction_files.collect(),
         MODAE_setup.out.data_spec_file
     )
 
