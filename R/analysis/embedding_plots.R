@@ -166,6 +166,7 @@ for (save_dir in save_dirs) {
       knn_predicted_dataset = "CCLE", 
       knn_title_method_name = "MODAE"
     )
+    saveRDS(tissue_plot, file = paste0(plot_path, "final_embedding_OT_level1.rds"))
     save_figure_safe(
       with(tissue_plot, tissue_plot), 
       png, 

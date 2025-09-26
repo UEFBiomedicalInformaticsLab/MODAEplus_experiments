@@ -655,7 +655,8 @@ tissue_visualizer <- function(
     remove_legend = TRUE, 
     knn_accuracy = FALSE,
     knn_predicted_dataset = NA, 
-    knn_title_method_name = ""
+    knn_title_method_name = "", 
+    plot_annotations = TRUE
 ) {
   if (scale_datasets_separately) {
     data_split <- split(data, f = shape_var)
@@ -711,23 +712,25 @@ tissue_visualizer <- function(
   }
   
   # Annotations
-  annotations <- plyr::ddply(
-    if (is.null(reference_shape_label)) res_umap else res_umap[res_umap[[shape_name]] == reference_shape_label,], 
-    .variables = color_name, 
-    .fun = function(x) data.frame(
-      Dim.1 = mean(x[["Dim.1"]]), 
-      Dim.2 = mean(x[["Dim.2"]]), 
-      label = x[[color_name]][1]
+  if (plot_annotations) {
+    annotations <- plyr::ddply(
+      if (is.null(reference_shape_label)) res_umap else res_umap[res_umap[[shape_name]] == reference_shape_label,], 
+      .variables = color_name, 
+      .fun = function(x) data.frame(
+        Dim.1 = mean(x[["Dim.1"]]), 
+        Dim.2 = mean(x[["Dim.2"]]), 
+        label = x[[color_name]][1]
+      )
     )
-  )
-  
-  p1 <- p1 + ggrepel::geom_text_repel(
-    aes(Dim.1, Dim.2, label = label), 
-    data = annotations, 
-    size = annotation_size, 
-    force = annotation_force, 
-    max.overlaps = annotation_max_overlaps
-  )
+    
+    p1 <- p1 + ggrepel::geom_text_repel(
+      aes(Dim.1, Dim.2, label = label), 
+      data = annotations, 
+      size = annotation_size, 
+      force = annotation_force, 
+      max.overlaps = annotation_max_overlaps
+    )
+  }
   
   if (knn_accuracy) {
     knn_preds <- correlation_knn(

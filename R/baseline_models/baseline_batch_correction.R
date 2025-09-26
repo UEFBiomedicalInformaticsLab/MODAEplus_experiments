@@ -6,11 +6,11 @@ source(paste0(script_root, "R/setup.R"))
 library(ggplot2)
 
 # Get pan-cancer mrna dataset from one of the external validation runs
-fn <- paste0(base_dir, "20250202_random_search/pancan_test/external_evaluation/internal/cl_mrna.csv.gz")
+fn <- paste0(output_dir, "20250202_random_search/pancan_test/external_evaluation/internal/cl_mrna.csv.gz")
 cl_exp <- read.csv(fn, row.names = 1, header = TRUE)
-fn <- paste0(base_dir, "20250202_random_search/pancan_test/external_evaluation/internal/patient_mrna.csv.gz")
+fn <- paste0(output_dir, "20250202_random_search/pancan_test/external_evaluation/internal/patient_mrna.csv.gz")
 patient_exp <- read.csv(fn, row.names = 1, header = TRUE)
-fn <- paste0(base_dir, "20250202_random_search/pancan_test/external_evaluation/internal/patient_types.txt")
+fn <- paste0(output_dir, "20250202_random_search/pancan_test/external_evaluation/internal/patient_types.txt")
 patient_types <- readLines(fn)
 
 output_path <- paste0(output_dir, "baseline_results/batch_correction/pan_cancer/")
@@ -472,17 +472,17 @@ n_labels <- length(union(
 # Raw data
 plot_raw <- TRUE
 if (plot_raw) {
-  fn <- paste0(base_dir, "20250410_random_search/pancan_test/external_evaluation/internal/cl_mrna.csv.gz")
+  fn <- paste0(output_dir, "20250410_random_search/pancan_test/external_evaluation/internal/cl_mrna.csv.gz")
   cl_exp <- readr::read_csv(fn, show_col_types = FALSE)
   cl_ids <- cl_exp[[1]]
   cl_exp <- data.frame(cl_exp[,-1])
   rownames(cl_exp) <- cl_ids
-  fn <- paste0(base_dir, "20250410_random_search/pancan_test/external_evaluation/internal/patient_mrna.csv.gz")
+  fn <- paste0(output_dir, "20250410_random_search/pancan_test/external_evaluation/internal/patient_mrna.csv.gz")
   patient_exp <- readr::read_csv(fn, show_col_types = FALSE)
   patient_ids <- patient_exp[[1]]
   patient_exp <- data.frame(patient_exp[,-1])
   rownames(patient_exp) <- patient_ids
-  fn <- paste0(base_dir, "20250410_random_search/pancan_test/external_evaluation/internal/patient_types.txt")
+  fn <- paste0(output_dir, "20250410_random_search/pancan_test/external_evaluation/internal/patient_types.txt")
   patient_types <- readLines(fn)
   
   dat_mat_list[["Unadjusted"]] <- rbind(cl_exp, patient_exp)
@@ -549,7 +549,8 @@ for (i in names(dat_mat_list)[4:5]) {
       annotation_force = 10, 
       knn_accuracy = FALSE,
       knn_predicted_dataset = "CCLE", 
-      knn_title_method_name = i
+      knn_title_method_name = i, 
+      plot_annotations = FALSE
     )
     saveRDS(tissue_plot, file = paste0(output_path, i, "_OT_level1.rds"))
     save_figure_safe(
@@ -605,7 +606,8 @@ for (i in names(dat_mat_list)) {
     point_size = 3, 
     point_alpha = 0.5, 
     annotation_size = 6, 
-    annotation_force = 10
+    annotation_force = 10, 
+    plot_annotations = FALSE
   )
   save_figure_safe(
     with(tissue_plot, tissue_plot), 
@@ -682,7 +684,8 @@ tissue_plot_celligner <- tissue_visualizer(
   annotation_force = 10, 
   knn_accuracy = FALSE,
   knn_predicted_dataset = "CCLE", 
-  knn_title_method_name = "Celligner"
+  knn_title_method_name = "Celligner", 
+  plot_annotations = FALSE
 )
 saveRDS(tissue_plot_celligner, file = paste0(output_path, "Celligner_OT_level1.rds"))
 save_figure_safe(
@@ -775,7 +778,8 @@ tissue_plot_codeae <- tissue_visualizer(
   annotation_force = 10, 
   knn_accuracy = FALSE,
   knn_predicted_dataset = "CCLE", 
-  knn_title_method_name = "CODE-AE"
+  knn_title_method_name = "CODE-AE", 
+  plot_annotations = FALSE
 )
 saveRDS(tissue_plot_codeae, file = paste0(output_path, "CODE_AE_OT_level1.rds"))
 save_figure_safe(
