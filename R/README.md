@@ -28,6 +28,8 @@ grep -r . -ne save_figure_safe
 ```
 Plots are saved to MODAE_OUTPUT_PATH/yyyymmdd_random_search/plots. 
 An overview of scripts and their output:
+
+### Important analysis scripts
 * analyse_results.R combines all the hyper-parameter tuning results and
   determines the best search iteration (a.k.a. "task").
   * Pareto plots named "objectives_plot*.png" with a few variations, main
@@ -83,7 +85,44 @@ An overview of scripts and their output:
   * Bar-plots: "*_drug_target_expression_*_t_test*.png.
 * embedding_plots.R creates visualizations of the embeddings as well as
   a comparison plot comparing final model performance vs baselines.
-  * Plots: "*final_embedding_OT_level1.png".
+  * Plots: "*final_embedding_OT_level1.png",
+    "performance_composite_plot.png".
   * CV result from hyper-parameter tuning (using final parameters).
+* embedding_sensitivity_plots.R creates visualizations of the
+  embeddings coloured by predicted drug-sensitivity.
+  * Saved in "sensitivity_umaps/".
+  * Pan-cancer and cancer-specific plots. 
+* drug_treatment_survival.R visualizes the survival comparisons between 
+  predicted resistant and sensitive patient groups. 
+  * Saved in "treatment_survival_km".
+  * Survival curves and Cox PH hazard ratios.
+  * Generate equivalent plots for CODE-AE prediction for comparison.
+  * Run survival::cox.zph to test the proportionality assumption 
+    and plot them in "tcga_survival_assumptions*.pdf". 
+  * Format results into summary tables. TODO: save tables.
+* result_exploration.R plot drug sensitivity heatmaps with clnical
+  information.
+  * Saved in "sensitivity_heatmaps/".
+* tissue_classifier_comparison.R combines tissue classification metrics
+  from kNN classifiers for different embeddings including CODE-AE,
+  Celligner, ComBat, and ablated MODAE models.
+  * Tables: "combined_tissue_metrics.csv", "tissue_metrics.csv".
+* upload_ready_outputs.R combines embeddings, predictions, and
+  several clinical information sources to create a single output
+  table for all TCGA patients.
+  * Saved in "../pancan_test/external_evaluation/internal/".
+  * Table: "unified_patient_output_table.csv.gz"
+  * Also formats best model drug performance into a table:
+    "best_model_drugwise_performance.csv" (saved in "plots/").
+* validation_analysis.R summarizes external validation performance.
+  * Table: "external_drug_response_performance.csv".
+  * Plot: "external_validation_drug_performance_text.png". 
 
-##
+### Less important analysis scripts (prototypes to be deleted or completed)
+* lung_cancer_summary.R visualizes LUAD and LUSC patient
+  drug-sensitivity and gene-expression with heatmaps.
+* nrf2_associations.R regression modeling and sensitivity group
+  t-tests for NRF2-score (Härkönen et al. 2023) associations.
+* prediction_clustering.R runs random-forest based clustering on
+  drug-sensitivity predictions and clinical annotations.
+  * Incomplete.
