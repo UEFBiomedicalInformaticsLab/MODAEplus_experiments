@@ -126,3 +126,20 @@ An overview of scripts and their output:
 * prediction_clustering.R runs random-forest based clustering on
   drug-sensitivity predictions and clinical annotations.
   * Incomplete.
+
+## baseline_models
+Code for batch correction baselines. 
+* baseline_batch_correction.R
+
+## data_exploration
+
+## data_preprocessing
+
+## plots
+This folder is currently underutilized and some of the scripts in 
+analysis should be moved here. Currently it contains:
+* combined_embedding_plot.R which combines the UMAPs of 
+  patient and cell-line tissue overlap.
+
+
+
