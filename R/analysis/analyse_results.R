@@ -443,8 +443,6 @@ for (save_dir in save_dirs) {
     obj_col <- match(objectives, colnames(pareto_table))
     colnames(pareto_table)[obj_col] <- objective_names
     
-    #png(paste0(plot_path, "objectives_plot.png"), width = plot_width * 2, height = plot_height * 2, res = plot_res, units = plot_units)
-    #pdf(paste0(plot_path, "objectives_plot.pdf"), width = plot_width / 25.4 * 1.25, height = plot_height / 25.4 * 2.25)
     save_figure_safe(
       COPS::pareto_plot(
         pareto_table, 
@@ -726,7 +724,7 @@ for (save_dir in save_dirs) {
         fold_inds <- fold_inds[1]
         fold_correlations <- list()
         for (fold_ind in fold_inds) {
-          one_ind <- fold_ind#with(drug_correlation_best, run == 0 & fold == 0)
+          one_ind <- fold_ind
           
           if (FALSE) {
             drug_correlation_mat <- reshape2::acast(
@@ -818,7 +816,6 @@ for (save_dir in save_dirs) {
           cluster_rows = FALSE, 
           cluster_columns = FALSE)
         
-        #pdf(paste0(plot_path, "drug_prediction_correlations_example.pdf"), width = plot_width / 25.4 * 1.25, height = plot_height / 25.4 * 2.25)
         save_figure_safe(
           cl_pred_hm, 
           pdf, 
@@ -856,11 +853,9 @@ for (save_dir in save_dirs) {
   color_limits <- c(
     min(pareto_table_obj[["test_objective"]], na.rm = TRUE), 
     max(pareto_table_obj[["test_objective"]], na.rm = TRUE))
-  #pdf(paste0(plot_path, "objectives_plot_colored.pdf"), width = plot_width / 25.4 * 1.25, height = plot_height / 25.4 * 2.25)
   pareto_table_obj[["Objective"]] <- pareto_table_obj[["test_objective"]]
   save_figure_safe(
     COPS::pareto_plot(
-    #pareto_plot(
       pareto_table_obj, 
       metrics = objective_names[1:4], 
       color_var = Objective, 
@@ -873,18 +868,14 @@ for (save_dir in save_dirs) {
       color_scale = scale_color_gradientn(
         limits = color_limits, 
         colours = pals::kovesi.rainbow(100)),
-      #color_scale = scale_color_distiller(palette = "RdBu"), 
-      #color_guide = guide_colourbar(title = "Sum of \nobjectives", ncol = 1, order = 1), 
       shape_scale = scale_shape_manual(values = c(3,8))), 
     pdf, 
     paste0(plot_path, "objectives_plot_colored.pdf"), 
-    width = plot_width / 25.4 * 0.85, #1.25, 
-    height = plot_width / 25.4 * 0.8 #plot_height / 25.4 * 2.25
+    width = plot_width / 25.4 * 0.85,
+    height = plot_width / 25.4 * 0.8 
   )
-  #setEPS()
   save_figure_safe(
     COPS::pareto_plot(
-    #pareto_plot(
       pareto_table_obj, 
       metrics = objective_names[1:4], 
       color_var = Objective, 
@@ -897,27 +888,15 @@ for (save_dir in save_dirs) {
       color_scale = scale_color_gradientn(
         limits = color_limits, 
         colours = pals::kovesi.rainbow(100)),
-      #color_scale = scale_color_distiller(palette = "Greens", direction = 1), 
       color_guide = guide_colourbar(title = "Sum of \nmetrics", ncol = 1, order = 1), 
       shape_scale = scale_shape_manual(values = c(3,8))), 
-    #pdf, 
-    #paste0(plot_path, "objectives_plot_colored_grad.pdf"), 
-    #postscript, 
-    #paste0(plot_path, "objectives_plot_colored_grad.eps"), 
     png, 
     paste0(plot_path, "objectives_plot_colored_grad.png"), 
     units = "in", 
     res = 300, 
-    width = plot_width / 25.4 * 0.85, #1.25, 
-    height = plot_width / 25.4 * 0.8 #plot_height / 25.4 * 2.25
+    width = plot_width / 25.4 * 0.85,
+    height = plot_width / 25.4 * 0.8 
   )
-  #color_breaks <- c(
-  #  min(pareto_table_obj[["test_objective"]], na.rm = TRUE), 
-  #  max(pareto_table_obj[["test_objective"]], na.rm = TRUE))
-  #colours = circlize::colorRamp2(color_breaks, c("blue", "red"))
-  
-  #png(paste0(plot_path, "objectives_plot_colored_surv_overfit.png"), width = plot_width / 25.4 * 1.25, height = plot_height / 25.4 * 2.25, units = "in", res = 300)
-  #pareto_table_obj <- plyr::join(pareto_table, external_perf_mean)
   color_limits <- c(
     min(pareto_table_obj[["survival_overfit"]], na.rm = TRUE), 
     max(pareto_table_obj[["survival_overfit"]], na.rm = TRUE))
@@ -1026,10 +1005,6 @@ for (save_dir in save_dirs) {
     diags <- lapply(diag_files, read_result_files, path = save_path, model_name = model_name)
     diags <- Reduce(COPS::rbind_fill, diags)
     
-    #if (!"iteration" %in% colnames(x)){
-    #  diags <- plyr::ddply(diags, c("fold", "run", "task", "stage", "name"),
-    #                       function(x) {x$iteration <- 1:nrow(x);return(x)})
-    #}
     diagnostics_list <- c(diagnostics_list, list(diags))
   }
   names(diagnostics_list) <- c("ps", "test")
@@ -1070,13 +1045,10 @@ for (save_dir in save_dirs) {
                                                              temp_best_shaped_valid[["iteration"]] %in% 1:1e6,]
         }
         
-        #png(paste0(plot_path, "diagnostic_plot_", i, "_", j, ".png"), 
-        #    width = plot_width * 2.5, height = plot_height * 2, res = plot_res, units = plot_units)
         save_figure_safe(
           ggplot(temp_best_shaped_valid, 
                  aes(iteration, loss, color = instance)) + 
             geom_line() + theme_bw() + scale_color_brewer(palette = "Dark2") + xlab("Epoch") + 
-            #facet_wrap(loss_type ~., scale = "free_y") + 
             ggh4x::facet_grid2(Loss_Type ~ Training, scales = "free", independent = "none",
                                space = "free_x") + 
             theme(#axis.title.x=element_blank(),
@@ -1085,17 +1057,11 @@ for (save_dir in save_dirs) {
               panel.grid.major.x = element_blank(),
               panel.grid.minor.x = element_blank()) + 
             guides(color = "none"),# + ggtitle(paste("Model losses", i,"phase", j, "set")), 
-          pdf, #png, 
+          pdf, 
           paste0(plot_path, "diagnostic_plot_", i, "_", j, ".pdf"), 
-          #width = plot_width * 2.5, 
-          #height = plot_height * 2, 
           width = plot_width / 25.4 * 1.5, 
-          height = plot_width / 25.4 * 1#, 
-          #res = plot_res, 
-          #units = plot_units
+          height = plot_width / 25.4 * 1
         )
-        #png(paste0(plot_path, "diagnostic_plot_", i, "_", j, "_batch_only.png"), 
-        #    width = plot_width * 2.5, height = plot_height * 2, res = plot_res, units = plot_units)
         save_figure_safe(
           ggplot(temp_best_shaped_valid[temp_best_shaped_valid[["Training"]] %in% c("Batch_Detection", "Batch_Correction"),], 
                  aes(iteration, loss, color = instance)) + 
@@ -1167,7 +1133,7 @@ for (save_dir in save_dirs) {
     }
   }
   
-  # TODO: update from above
+  # TODO: check if obsolete / update from above
   if (!exists("parameters")) {
     # Parameters
     param_files <- all_files[grepl("_parameters_task[0-9]+\\.csv", all_files)]
@@ -1194,7 +1160,6 @@ for (save_dir in save_dirs) {
     for (layer_i in 1:(max(sapply(sr_layers, length)))) {
       parameters[[paste0("survival_model_layer", layer_i)]] <- as.numeric(sapply(sr_layers, function(x) x[layer_i]))
     }
-    #ow <- lapply(strsplit(parameters[["objective_weights"]], split = "\\n "), function(x) as.numeric(gsub("\\[|array|\\(|\\)|\\]", "", x)))
     ow <- lapply(strsplit(parameters[["objective_weights"]], split = " "), function(x) as.numeric(gsub("\\[|array|\\(|\\)|\\]", "", x)))
     parameters[["reconstruction_weight"]] <- sapply(ow, function(x) x[[1]])
     parameters[["classifier_weight"]] <- sapply(ow, function(x) x[[2]])
@@ -1269,7 +1234,6 @@ for (save_dir in save_dirs) {
   
   brca_class_ind <- which(single_embedding[["brca_class"]] != "NA")
   if (length(brca_class_ind) > 0) {
-    #png(paste0(plot_path, "embedding_umap_brca_classes.png"), width = plot_width, height = plot_height, res = plot_res, units = plot_units)
     set.seed(0)
     save_figure_safe(
       COPS::umap_viz(single_embedding[brca_class_ind, shared_embedding_names], 
@@ -1296,7 +1260,6 @@ for (save_dir in save_dirs) {
       res = plot_res, 
       units = plot_units
     )
-    #png(paste0(plot_path, "embedding_pca_brca_classes.png"), width = plot_width, height = plot_height, res = plot_res, units = plot_units)
     set.seed(0)
     save_figure_safe(
       COPS::pca_viz(single_embedding[brca_class_ind, shared_embedding_names], 
@@ -1352,7 +1315,6 @@ for (save_dir in save_dirs) {
   table(single_embedding[["cancer_type"]])
   
   n_labels <- length(unique(single_embedding[["cancer_type"]]))
-  #png(paste0(plot_path, "embedding_umap_cancer_types.png"), width = plot_width, height = plot_height, res = plot_res, units = plot_units)
   set.seed(0)
   save_figure_safe(
     COPS::umap_viz(single_embedding[,shared_embedding_names], 
@@ -1382,7 +1344,6 @@ for (save_dir in save_dirs) {
     units = plot_units
   )
   
-  #png(paste0(plot_path, "embedding_pca_cancer_types.png"), width = plot_width, height = plot_height, res = plot_res, units = plot_units)
   set.seed(0)
   save_figure_safe(
     COPS::pca_viz(single_embedding[,shared_embedding_names], 
@@ -1397,7 +1358,6 @@ for (save_dir in save_dirs) {
     units = plot_units
   )
   
-  #png(paste0(plot_path, "embedding_umap_sample_types.png"), width = plot_width, height = plot_height, res = plot_res, units = plot_units)
   set.seed(0)
   save_figure_safe(
     COPS::umap_viz(single_embedding[,shared_embedding_names], 
@@ -1425,7 +1385,6 @@ for (save_dir in save_dirs) {
     units = plot_units
   )
   
-  #png(paste0(plot_path, "embedding_pca_sample_types.png"), width = plot_width, height = plot_height, res = plot_res, units = plot_units)
   set.seed(0)
   save_figure_safe(
     COPS::pca_viz(single_embedding[,shared_embedding_names], 
@@ -1447,7 +1406,6 @@ for (save_dir in save_dirs) {
       for (zj in z_ind[z_ind < zi]) {
         zi_name <- colnames(single_embedding)[zi]
         zj_name <- colnames(single_embedding)[zj]
-        #png(paste0(plot_path, "pairwise_embeddings/", zj_name, "_", zi_name, "_cancer_types.png"), width = plot_width, height = plot_height, res = plot_res, units = plot_units)
         save_figure_safe(
           ggplot(single_embedding[, c(zj_name, zi_name, "cancer_type", "sample_type")], 
                  aes(!!ggplot2::ensym(zj_name), !!ggplot2::ensym(zi_name), color = cancer_type, shape = sample_type)) + 
@@ -1462,49 +1420,6 @@ for (save_dir in save_dirs) {
         )
       }
     }
-  }
-  
-  # Similarity matrix
-  if (FALSE) {
-    X <- as.matrix(single_embedding[, shared_embedding_names])
-    K <- X %*% t(X)
-    hist(K)
-    K[K < -1000] <- -1000
-    K[K > 5000] <- 5000
-    hist(K)
-    #COPS::plot_similarity_matrix(K, limits = c(-20,20))
-    
-    table(single_embedding[,"cancer_type"])
-    n_ct <- length(unique(single_embedding[,"cancer_type"]))
-    col <- pals::kovesi.rainbow(n_ct)
-    names(col) <- unique(single_embedding[,"cancer_type"])
-    col <- list(cancer_type = col) 
-    
-    top_annot <- ComplexHeatmap::HeatmapAnnotation(
-      df = single_embedding[,"cancer_type", drop = FALSE], 
-      col = col)
-    left_annot <- ComplexHeatmap::rowAnnotation(
-      df = single_embedding[,"cancer_type", drop = FALSE], 
-      col = col)
-    hm <- ComplexHeatmap::Heatmap(
-      K, 
-      top_annotation = top_annot, 
-      left_annotation = left_annot, 
-      show_column_dend = FALSE, 
-      show_column_names = FALSE, 
-      show_row_dend = FALSE, 
-      show_row_names = FALSE)
-    
-    #png(paste0(plot_path, "linear_kernel_cancer_types.png"), width = plot_width, height = plot_height, res = plot_res, units = plot_units)
-    save_figure_safe(
-      hm, 
-      png, 
-      paste0(plot_path, "linear_kernel_cancer_types.png"), 
-      width = plot_width, 
-      height = plot_height, 
-      res = plot_res, 
-      units = plot_units
-    )
   }
   
   # Prediction correlations, from parameter search data
@@ -1542,7 +1457,6 @@ for (save_dir in save_dirs) {
     cluster_rows = FALSE, 
     cluster_columns = FALSE)
   
-  #pdf(paste0(plot_path, "drug_prediction_correlations_example2_cl.pdf"), width = plot_width / 25.4 * 1.25, height = plot_height / 25.4 * 2.25)
   save_figure_safe(
     cl_pred_hm, 
     pdf, 
@@ -1564,209 +1478,12 @@ for (save_dir in save_dirs) {
     cluster_rows = FALSE, 
     cluster_columns = FALSE)
   
-  #pdf(paste0(plot_path, "drug_prediction_correlations_example2_patient.pdf"), width = plot_width / 25.4 * 1.25, height = plot_height / 25.4 * 2.25)
   save_figure_safe(
     patient_pred_hm, 
     pdf, 
     paste0(plot_path, "drug_prediction_correlations_example2_patient.pdf"), 
     width = plot_width / 25.4 * 1.25, 
     height = plot_height / 25.4 * 2.25
-  )
-  
-  if (FALSE) {
-    # Best drugs
-    predictions_list <- list()
-    for (file_list in list(ps_files, t_files)) {
-      predictions_files <- file_list[grep("predictions", file_list)]
-      predictions_files <- predictions_files[grep(paste0("task", best_external_mean[1,"task"]), predictions_files)]
-      
-      predictions <- lapply(predictions_files, read_result_files, path = save_path, model_name = model_name)
-      predictions <- Reduce(COPS::rbind_fill, predictions)
-      
-      predictions_list <- c(predictions_list, list(predictions))
-    }
-    names(predictions_list) <- c("ps", "test")
-    
-    predictions_best <- plyr::join(
-      best_external_mean[, c(best_by_external, "task"), drop = FALSE], 
-      predictions_list[["test"]], 
-      by = c(best_by_external, "task"))
-    single_predictions <- predictions_best[predictions_best[["run"]] == 0 &
-                                             predictions_best[["fold"]] == 0, ]
-    drug_names <- readLines(paste0(ctrp_path, "drug_names.txt"))
-    
-    drug_prediction_ind <- grepl("dr_pred", colnames(single_predictions))
-    drug_predictions <- single_predictions[
-      , colnames(single_predictions) %in% c("fold","run", "task", "X") | 
-        drug_prediction_ind]
-    
-    drug_predictions <- reshape2::melt(
-      drug_predictions, 
-      id.vars = c("fold","run", "task", "X"), 
-      variable.name = "drug", 
-      value.name = "response")
-    write.csv(drug_predictions, gzfile(paste0(plot_path, "best_drug_predictions.csv.gz")))
-    
-    top10_drugs <- plyr::ddply(
-      drug_predictions, 
-      c("fold","run", "task", "X"), 
-      function(x) x[nrow(x) - rank(x[["response"]]) < 10,])
-    
-    top10_drugs[["drug_name"]] <- drug_names[as.numeric(gsub("dr_pred_", "", top10_drugs[["drug"]]))+1]
-    table(top10_drugs[["drug_name"]])
-    
-    top1_drugs <- plyr::ddply(
-      drug_predictions, 
-      c("fold","run", "task", "X"), 
-      function(x) x[nrow(x) - rank(x[["response"]]) < 1,])
-    
-    top1_drugs[["drug_name"]] <- drug_names[as.numeric(gsub("dr_pred_", "", top1_drugs[["drug"]]))+1]
-    
-    n_labels <- length(table(top1_drugs[["drug_name"]]))
-    single_embedding_drugged <- plyr::join(single_embedding, top1_drugs)
-    brca_ind <- single_embedding_drugged[["cancer_type"]] == "BRCA"
-    #png(paste0(plot_path, "brca_embedding_umap_best_drug.png"), width = plot_width, height = plot_height, res = plot_res, units = plot_units)
-    set.seed(0)
-    save_figure_safe(
-      COPS::umap_viz(
-        single_embedding_drugged[brca_ind, shared_embedding_names], 
-        category = single_embedding_drugged[brca_ind, "drug_name"], 
-        category_label = "Best Drug", pre_manifold_pca = FALSE, 
-        color_scale = scale_color_manual(values = pals::kovesi.rainbow(n=n_labels)), 
-        umap_args = list(init = "normlaplacian", min_dist = 0.5)), 
-      png, 
-      paste0(plot_path, "brca_embedding_umap_best_drug.png"), 
-      width = plot_width, 
-      height = plot_height, 
-      res = plot_res, 
-      units = plot_units
-    )
-    
-    #png(paste0(plot_path, "brca_embedding_pca_best_drug.png"), width = plot_width, height = plot_height, res = plot_res, units = plot_units)
-    set.seed(0)
-    save_figure_safe(
-      COPS::pca_viz(
-        single_embedding_drugged[brca_ind, shared_embedding_names], 
-        category = single_embedding_drugged[brca_ind, "drug_name"], 
-        category_label = "Best Drug", pre_manifold_pca = FALSE, 
-        color_scale = scale_color_manual(values = pals::kovesi.rainbow(n=n_labels))), 
-      png,
-      paste0(plot_path, "brca_embedding_pca_best_drug.png"), 
-      width = plot_width, 
-      height = plot_height, 
-      res = plot_res, 
-      units = plot_units
-    )
-  }
-}
-
-if (FALSE) {
-  brca_exp <- read.csv(paste0(base_dir, "brca_data.csv"), row.names = 1, header = TRUE)
-  ccle_exp <- read.csv(paste0(base_dir, "ccle_data.csv"), row.names = 1, header = TRUE)
-  
-  set.seed(0)
-  #png(paste0(plot_path, "gex_data_umap.png"), width = plot_width * 1.15, height = plot_height, res = plot_res, units = plot_units)
-  save_figure_safe(
-    COPS::umap_viz(rbind(brca_exp, ccle_exp), 
-                 category = rep(c("TCGA BRCA", "CCLE"), c(nrow(brca_exp), nrow(ccle_exp))), 
-                 category_label = "dataset", 
-                 umap_args = list(init = "normlaplacian", min_dist = 0.5)) + 
-    theme_bw(base_size = 20) + geom_point(shape = "+", size = rel(0.75)), 
-    png, 
-    paste0(plot_path, "gex_data_umap.png"), 
-    width = plot_width * 1.15, 
-    height = plot_height, 
-    res = plot_res, 
-    units = plot_units
-  )
-  
-  set.seed(0)
-  #png(paste0(plot_path, "gex_data_pca.png"), width = plot_width * 1.15, height = plot_height, res = plot_res, units = plot_units)
-  save_figure_safe(
-    COPS::pca_viz(rbind(brca_exp, ccle_exp), 
-                category = rep(c("TCGA BRCA", "CCLE"), c(nrow(brca_exp), nrow(ccle_exp))), 
-                category_label = "dataset") + 
-    theme_bw(base_size = 20) + geom_point(shape = "+", size = rel(0.75)), 
-    png, 
-    paste0(plot_path, "gex_data_pca.png"), 
-    width = plot_width * 1.15, 
-    height = plot_height, 
-    res = plot_res, 
-    units = plot_units
-  )
-  
-  zero_var_genes <- lapply(list(brca_exp, ccle_exp), function(x) which(apply(x, 2, var) == 0))
-  zero_var_genes <- Reduce(union, zero_var_genes)
-  if (length(zero_var_genes) > 0) {
-    brca_exp_filtered <- brca_exp[,-zero_var_genes]
-    ccle_exp_filtered <- ccle_exp[,-zero_var_genes]
-  } else {
-    brca_exp_filtered <- brca_exp
-    ccle_exp_filtered <- ccle_exp
-  }
-  set.seed(0)
-  #png(paste0(plot_path, "gex_data_scaled_umap.png"), width = plot_width * 1.15, height = plot_height, res = plot_res, units = plot_units)
-  save_figure_safe(
-    COPS::umap_viz(rbind(scale(brca_exp_filtered), scale(ccle_exp_filtered)), 
-                 category = rep(c("TCGA BRCA", "CCLE"), c(nrow(brca_exp), nrow(ccle_exp))), 
-                 category_label = "dataset", 
-                 umap_args = list(init = "normlaplacian", min_dist = 0.5)) + 
-    theme_bw(base_size = 20) + geom_point(shape = "+", size = rel(0.75)), 
-    png,
-    paste0(plot_path, "gex_data_scaled_umap.png"), 
-    width = plot_width * 1.15, 
-    height = plot_height, 
-    res = plot_res, 
-    units = plot_units
-  )
-  
-  set.seed(0)
-  #png(paste0(plot_path, "gex_data_scaled_pca.png"), width = plot_width * 1.15, height = plot_height, res = plot_res, units = plot_units)
-  save_figure_safe(
-    COPS::pca_viz(rbind(scale(brca_exp_filtered), scale(ccle_exp_filtered)), 
-                category = rep(c("TCGA BRCA", "CCLE"), c(nrow(brca_exp), nrow(ccle_exp))), 
-                category_label = "dataset") + 
-    theme_bw(base_size = 20) + geom_point(shape = "+", size = rel(0.75)), 
-    png, 
-    paste0(plot_path, "gex_data_scaled_pca.png"), 
-    width = plot_width * 1.15, 
-    height = plot_height, 
-    res = plot_res, 
-    units = plot_units
-  )
-  
-  n_labels <- length(unique(single_embedding[["cancer_type"]]))
-  #png(paste0(plot_path, "embedding_umap_cancer_types.png"), width = plot_width * 1.15, height = plot_height, res = plot_res, units = plot_units)
-  set.seed(0)
-  save_figure_safe(
-    COPS::umap_viz(single_embedding[,shared_embedding_names], 
-                   category = single_embedding[["cancer_type"]], 
-                   category_label = "Cancer Type", pre_manifold_pca = FALSE, 
-                   color_scale = scale_color_manual(values = pals::kovesi.rainbow(n=n_labels)), 
-                   umap_args = list(init = "normlaplacian", min_dist = 0.5)) + 
-      theme_bw(base_size = 20) + geom_point(shape = "+", size = rel(0.75)), 
-    png, 
-    paste0(plot_path, "embedding_umap_cancer_types.png"), 
-    width = plot_width * 1.15, 
-    height = plot_height, 
-    res = plot_res, 
-    units = plot_units
-  )
-  
-  #png(paste0(plot_path, "embedding_pca_cancer_types.png"), width = plot_width * 1.15, height = plot_height, res = plot_res, units = plot_units)
-  set.seed(0)
-  save_figure_safe(
-    COPS::pca_viz(single_embedding[,shared_embedding_names], 
-                  category = single_embedding[["cancer_type"]], 
-                  category_label = "Cancer Type", 
-                  color_scale = scale_color_manual(values = pals::kovesi.rainbow(n=n_labels))) + 
-      theme_bw(base_size = 20) + geom_point(shape = "+", size = rel(0.75)), 
-    png, 
-    paste0(plot_path, "embedding_pca_cancer_types.png"), 
-    width = plot_width * 1.15, 
-    height = plot_height, 
-    res = plot_res, 
-    units = plot_units
   )
 }
 

@@ -787,13 +787,10 @@ for (save_dir in save_dirs) {
       stop("Unexpected plot list length")
     }
     
-    
-    #pdf(paste0(plot_path, "performance_composite_plot.pdf"), width = plot_width / 25.4 * 1, height = plot_width / 25.4 * 0.6)
     png(paste0(plot_path, "performance_composite_plot.png"), width = plot_width / 25.4 * 1, height = plot_width / 25.4 * 0.6, res = 300, unit = "in")
     grid::grid.draw(combined_embedding_plot)
     dev.off()
     
-    #pdf(paste0(plot_path, "performance_external_plot.pdf"), width = plot_width / 25.4 * 0.5, height = plot_width / 25.4 * 0.6 * 0.4)
     png(paste0(plot_path, "png"), width = plot_width / 25.4 * 0.5, height = plot_width / 25.4 * 0.6 * 0.4, res = 300, unit = "in")
     perf_plots[["surv_ext"]]
     dev.off()

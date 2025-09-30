@@ -7,7 +7,6 @@ source(paste0(script_root, "R/setup.R"))
 save_dirs <- c(
   "20250410_random_search/pancan_test/", 
   "20250415_random_search/pancan_test/" # primary labels only
-  #"20250527_random_search/pancan_test/" # primary data only
 )
 
 pred_list <- list()

@@ -8,9 +8,6 @@ for (save_dir in save_dirs) {
   if(exists("var_list")) try(detach(var_list))
   var_list <- get_paths_and_parameters(save_dir, remove_incomplete = FALSE)
   attach(var_list)
-  #best_task <- readLines(paste0(save_path, "best_task.txt"))
-  #param_best_task_ind <- match(best_task, parameters[["task"]])
-  #shared_embedding_names <- paste0("z", 1:parameters[param_best_task_ind, "bottle_neck"])
   
   dn_file <- paste0(save_path, "external_evaluation/diagnostics.csv.gz")
   diag_ext <- read.csv(dn_file)
