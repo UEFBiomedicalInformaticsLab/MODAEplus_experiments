@@ -79,5 +79,5 @@ and can be done with [python/final_training/external_validation_post_processing.
 
 ## Step 8 analyse final results
 
-See various scripts in [R/analysis/](R/analysis/) and [R/plotting/](R/plotting/). 
+See various scripts in [R/analysis/](R/analysis/) and [R/plots/](R/plots/). 
 Futher information about the produced plots is listed in [R/README.md](R/README.md). 
