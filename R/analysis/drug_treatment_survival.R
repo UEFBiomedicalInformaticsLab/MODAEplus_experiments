@@ -5,16 +5,17 @@ if (script_root == "") {
 source(paste0(script_root, "R/setup.R"))
 
 codeae_comparison <- TRUE
+save_plots <- FALSE
 
 for (save_dir in save_dirs) {
   if(exists("var_list")) try(detach(var_list))
   var_list <- get_paths_and_parameters(save_dir, remove_incomplete = FALSE)
   attach(var_list)
   best_task <- readLines(paste0(save_path, "best_task.txt"))
-  param_best_task_ind <- match(best_task, parameters[["task"]])
+  param_best_task_ptr <- match(best_task, parameters[["task"]])
   shared_embedding_names <- paste0(
     "z", 
-    1:parameters[param_best_task_ind, "bottle_neck"]
+    1:parameters[param_best_task_ptr, "bottle_neck"]
   )
   
   # Final predictions
@@ -99,20 +100,20 @@ for (save_dir in save_dirs) {
       tcga_surv_data[["simplified_stage"]] <- gsub(
         "[A-C]+$", "", tcga_surv_data[["ajcc_pathologic_tumor_stage"]])
       
-      scanb_surv_ind <- match(
+      scanb_surv_ptr <- match(
         rownames(scanb_predictions), 
         scanb_surv_data[["GEX.assay"]])
     }
-    tcga_surv_ind <- match(
+    tcga_surv_ptr <- match(
       substr(rownames(tcga_predictions), 1, 12), 
       tcga_surv_data[["bcr_patient_barcode"]])
     
-    tcga_surv_type <- tcga_surv_data[tcga_surv_ind, "type"]
+    tcga_surv_type <- tcga_surv_data[tcga_surv_ptr, "type"]
     tcga_surv_type[is.na(tcga_surv_type)] <- "NA"
     
     dr_dir <- paste0(
-      base_dir, 
-      "../CODE-AE-v1.0/data/tcga/"
+      data_root, 
+      "CODE-AE-v1.0/data/tcga/"
     )
     first_treatment <- FALSE
     if (first_treatment) {
@@ -249,6 +250,7 @@ for (save_dir in save_dirs) {
     codeae_cox_results <- list()
     codeae_km_results <- list()
     codeae_concordance_results <- list()
+    treated_pairs_n <- list()
     
     for (i in 1:length(pred_cols)) {
       pred_col <- pred_cols[[i]][["column"]]
@@ -270,13 +272,13 @@ for (save_dir in save_dirs) {
         if (canceri == "NA") next
         dir.create(canceri_path, recursive = TRUE)
         cancer_ind <- tcga_surv_type %in% canceri
-        cancer_sample_ptr <- rownames(tcga_predictions)[cancer_ind]
-        cancer_surv_ind <- tcga_surv_ind[cancer_ind]
-        tcga_risk_pred <- tcga_predictions[cancer_sample_ptr, pred_col]
+        cancer_sample_ids <- rownames(tcga_predictions)[cancer_ind]
+        cancer_surv_ptr <- tcga_surv_ptr[cancer_ind]
+        tcga_risk_pred <- tcga_predictions[cancer_sample_ids, pred_col]
         tcga_risk_quantiles <- mean(tcga_risk_pred, na.rm = TRUE)
         if (tcga_brca || scanb) {
           scanb_risk_quantiles <- quantile(
-            scanb_predictions[cancer_sample_ptr, pred_col], 
+            scanb_predictions[cancer_sample_ids, pred_col], 
             probs = 1/2, 
             na.rm = TRUE)
           use_quants <- ifelse(
@@ -284,7 +286,7 @@ for (save_dir in save_dirs) {
             tcga_risk_quantiles, 
             scanb_risk_quantiles)
           scanb_risk_bin <- cut(
-            scanb_predictions[cancer_sample_ptr, pred_col], 
+            scanb_predictions[cancer_sample_ids, pred_col], 
             breaks = c(-Inf, use_quants, Inf), 
             labels = c("low", "high"))
         } else {
@@ -328,13 +330,14 @@ for (save_dir in save_dirs) {
           )
           return(sf)
         }
-        tcga_nna_ind <- which(!(
-          is.na(tcga_surv_data[cancer_surv_ind, surv_event_col]) | 
-            is.na(tcga_surv_data[cancer_surv_ind, surv_time_col]) | 
+        tcga_nna_ptr <- which(!(
+          is.na(tcga_surv_data[cancer_surv_ptr, surv_event_col]) | 
+            is.na(tcga_surv_data[cancer_surv_ptr, surv_time_col]) | 
             is.na(tcga_risk_bin)
         ))
-        if (length(tcga_nna_ind) == 0) next
-        if (sd(tcga_risk_pred[tcga_nna_ind]) == 0) next
+        # Can't skip missing or invariantt predictions for performance comparison
+        #if (length(tcga_nna_ptr) == 0) next
+        #if (sd(tcga_risk_pred[tcga_nna_ptr]) == 0) next
         tcga_covar_names <- c(
           age_at_initial_pathologic_diagnosis = "age", 
           #gender = "sex", 
@@ -342,7 +345,7 @@ for (save_dir in save_dirs) {
           ajcc_pathologic_tumor_stage = "stage"
         )
         cancer_covars <- tcga_surv_data[
-          cancer_surv_ind[tcga_nna_ind], 
+          cancer_surv_ptr[tcga_nna_ptr], 
           names(tcga_covar_names), 
           drop = FALSE
         ]
@@ -365,7 +368,7 @@ for (save_dir in save_dirs) {
         ) > 0.5
         cancer_response_predictors <- data.frame(
           cancer_covars[!cancer_covar_missing],
-          sensitivity = scale(tcga_risk_pred[tcga_nna_ind])
+          sensitivity = scale(tcga_risk_pred[tcga_nna_ptr])
         )
         # Simplify stage information
         if (!is.null(cancer_response_predictors[["stage"]])) {
@@ -373,7 +376,7 @@ for (save_dir in save_dirs) {
             cancer_response_predictors[["stage"]]
           )
         }
-        rownames(cancer_response_predictors) <- cancer_sample_ptr[tcga_nna_ind]
+        rownames(cancer_response_predictors) <- cancer_sample_ids[tcga_nna_ptr]
         if (treated_subset) {
           treat_ind <- tcga_dr_table[["pharmaceutical_therapy_drug_name"]] == pred_name
           treat_id <- tcga_dr_table[treat_ind, "bcr_patient_barcode"]
@@ -383,49 +386,47 @@ for (save_dir in save_dirs) {
             "pharmaceutical_tx_started_days_to"
           ]
           
-          treat_ind <- which(treat_ind)[treat_time >= 0]
+          #treat_ind <- which(treat_ind)[treat_time >= 0]
           treat_id <- treat_id[treat_time >= 0]
           treat_time <- treat_time[treat_time >= 0]
           names(treat_time) <- treat_id
           
           # Index of binned values with valid survival data and matching treatment
-          bin_treat_ind <- intersect(
-            which(substr(cancer_sample_ptr, 1, 12) %in% treat_id), 
-            tcga_nna_ind
+          bin_treat_ptr <- intersect(
+            which(substr(cancer_sample_ids, 1, 12) %in% treat_id), 
+            tcga_nna_ptr
           )
-          bin_treat_id <- substr(cancer_sample_ptr, 1, 12)[bin_treat_ind]
-          bin_treat_ptr <- match(bin_treat_id, substr(cancer_sample_ptr, 1, 12))
-          if (any(bin_treat_ptr != bin_treat_ind)) {
+          bin_treat_id <- substr(cancer_sample_ids, 1, 12)[bin_treat_ptr]
+          bin_treat_ptr <- match(bin_treat_id, substr(cancer_sample_ids, 1, 12))
+          if (any(bin_treat_ptr != bin_treat_ptr)) {
             stop("Indexing assumption is incorrect.") 
             # meaning equivalent code in single drug subset
           }
           # Match binned index to treatment start time index
-          time_ind <- match(bin_treat_id, treat_id)
+          time_ptr <- match(bin_treat_id, treat_id)
           
           time_adjusted <- (
             tcga_surv_data[
-              cancer_surv_ind[bin_treat_ind], 
+              cancer_surv_ptr[bin_treat_ptr], 
               surv_time_col
             ] - 
-              treat_time[time_ind] * ifelse(pred_time_adjust, 1, 0)
+              treat_time[time_ptr] * ifelse(pred_time_adjust, 1, 0)
           )
-          time_adjusted_ind <- time_adjusted > 0
-          
-          if (sum(time_adjusted_ind)<2) next
+          positive_time_ind <- time_adjusted > 0
+          treated_pairs_n <- c(treated_pairs_n, list(data.frame(
+            drug = pred_name, 
+            cancer = canceri, 
+            survival = surv_event_col, 
+            n = sum(positive_time_ind)
+          )))
+          # Skip if not at least 2 patients with positive time
+          if (sum(positive_time_ind)<2) next
           
           cox_table <- data.frame(
-            cancer_response_predictors[bin_treat_id,], 
-            event = tcga_surv_data[cancer_surv_ind[bin_treat_ind], surv_event_col] == 1, 
-            time = (
-              tcga_surv_data[cancer_surv_ind[bin_treat_ind], surv_time_col] - 
-                treat_time[time_ind] * ifelse(pred_time_adjust, 1, 0)
-            )
+            cancer_response_predictors[bin_treat_id,][positive_time_ind,], 
+            event = tcga_surv_data[cancer_surv_ptr[bin_treat_ptr][positive_time_ind], surv_event_col] == 1, 
+            time = time_adjusted[positive_time_ind]
           )
-          if (surv_event_col == "PFI") {
-            # Remove any observations of treatments after progression event
-            cox_table <- cox_table[cox_table[["time"]] > 0, , drop= FALSE]
-          }
-          
           if (nrow(cox_table) > 1) {
             unitary_factors <- sapply(
               lapply(cox_table, table, useNA = "no"), 
@@ -451,8 +452,8 @@ for (save_dir in save_dirs) {
                 )
               )
             )
-            cox_model <- survival::coxph(cox_formula, data = cox_table)
             try({
+              cox_model <- survival::coxph(cox_formula, data = cox_table)
               test <- summary(cox_model)
               temp <- data.frame(
                 drug = pred_name, 
@@ -466,6 +467,14 @@ for (save_dir in save_dirs) {
               )
               cox_results <- c(cox_results, list(temp))
             })
+            # Investigate NA coefficients
+            if (length(cox_results)>0) {
+              coef_only_na <- with(
+                cox_results[[length(cox_results)]], 
+                is.na(coef[var=="sensitivity"]) & !is.na(p[var=="sensitivity"]) 
+              )
+              if (coef_only_na) stop("Unexplained Cox NA.")
+            }
             try({
               cox_plot <- survminer::ggforest(
                 cox_model, data = cox_table, fontsize = 0.6, main = NULL, 
@@ -481,7 +490,7 @@ for (save_dir in save_dirs) {
                 surv_event_col, 
                 "_coxph.png"
               )
-              save_figure_safe(
+              if (save_plots) save_figure_safe(
                 cox_plot, 
                 png, 
                 fn, 
@@ -504,8 +513,8 @@ for (save_dir in save_dirs) {
                   by = "Sample"
                 )
                 cox_table[["sensitivity"]] <- codeae_predi[[2]]
-                cox_model <- survival::coxph(cox_formula, data = cox_table)
                 try({
+                  cox_model <- survival::coxph(cox_formula, data = cox_table)
                   test <- summary(cox_model)
                   temp <- data.frame(
                     drug = pred_name, 
@@ -535,7 +544,7 @@ for (save_dir in save_dirs) {
                     surv_event_col, 
                     "_coxph.png"
                   )
-                  save_figure_safe(
+                  if (save_plots) save_figure_safe(
                     cox_plot, 
                     png, 
                     fb, 
@@ -554,34 +563,32 @@ for (save_dir in save_dirs) {
             tcga_dr_single_drug_patients
           )
           if (length(single_drug_treat_id) > 1) {
-            single_drug_bin_treat_ind <- match(
+            single_drug_bin_treat_ptr <- match(
               single_drug_treat_id, 
-              substr(cancer_sample_ptr, 1, 12)
+              substr(cancer_sample_ids, 1, 12)
             )
-            single_drug_time_ind <- match(single_drug_treat_id, treat_id)
+            single_drug_time_ptr <- match(single_drug_treat_id, treat_id)
             sd_cox_table <- data.frame(
               cancer_response_predictors[single_drug_treat_id,], 
               event = tcga_surv_data[
-                cancer_surv_ind[single_drug_bin_treat_ind], 
+                cancer_surv_ptr[single_drug_bin_treat_ptr], 
                 surv_event_col
               ] == 1, 
               time = (
                 tcga_surv_data[
-                  cancer_surv_ind[single_drug_bin_treat_ind], 
+                  cancer_surv_ptr[single_drug_bin_treat_ptr], 
                   surv_time_col
                 ] - (
-                  treat_time[single_drug_time_ind] * 
+                  treat_time[single_drug_time_ptr] * 
                     ifelse(pred_time_adjust, 1, 0)
                 )
               )
             )
-            if (surv_event_col == "PFI") {
-              # Remove any observations of treatments after progression event
-              sd_cox_table <- sd_cox_table[
-                sd_cox_table[["time"]] > 0,, 
-                drop= FALSE
-              ]
-            }
+            # Remove any observations of with 0 or negative time
+            sd_cox_table <- sd_cox_table[
+              sd_cox_table[["time"]] > 0,, 
+              drop= FALSE
+            ]
             unitary_factors <- sapply(
               lapply(sd_cox_table, table, useNA = "no"), 
               length
@@ -622,7 +629,7 @@ for (save_dir in save_dirs) {
                 surv_event_col, 
                 "_coxph.png"
               )
-              save_figure_safe(
+              if (save_plots) save_figure_safe(
                 cox_plot, 
                 png, 
                 fn, 
@@ -662,7 +669,7 @@ for (save_dir in save_dirs) {
                     surv_event_col, 
                     "_coxph.png"
                   )
-                  save_figure_safe(
+                  if (save_plots) save_figure_safe(
                     cox_plot, 
                     png, 
                     fn, 
@@ -676,17 +683,17 @@ for (save_dir in save_dirs) {
             }
           }
           
-          if(any(tcga_surv_data[cancer_surv_ind[bin_treat_ind], "bcr_patient_barcode"] != bin_treat_id)) {
+          if(any(tcga_surv_data[cancer_surv_ptr[bin_treat_ptr], "bcr_patient_barcode"] != bin_treat_id)) {
             stop("Mis-matched IDs in treatment-survival tables.")
           }
           
           surv_df <- data.frame(
             event = tcga_surv_data[
-              cancer_surv_ind[bin_treat_ind], 
+              cancer_surv_ptr[bin_treat_ptr], 
               surv_event_col
-            ][time_adjusted_ind] == 1, 
-            time = time_adjusted[time_adjusted_ind],
-            sensitivity = tcga_risk_pred[bin_treat_ind][time_adjusted_ind]
+            ][positive_time_ind] == 1, 
+            time = time_adjusted[positive_time_ind],
+            sensitivity = tcga_risk_pred[bin_treat_ptr][positive_time_ind]
           )
           surv_c <- survival::concordance(
             survival::Surv(time, event) ~ sensitivity, 
@@ -702,12 +709,12 @@ for (save_dir in save_dirs) {
           concordance_results <- c(concordance_results, list(temp))
           
           tcga_sf <- survival_f(
-            group = tcga_risk_bin[bin_treat_ind][time_adjusted_ind], 
+            group = tcga_risk_bin[bin_treat_ptr][positive_time_ind], 
             event = tcga_surv_data[
-              cancer_surv_ind[bin_treat_ind], 
+              cancer_surv_ptr[bin_treat_ptr], 
               surv_event_col
-            ][time_adjusted_ind] == 1, 
-            time = time_adjusted[time_adjusted_ind]
+            ][positive_time_ind] == 1, 
+            time = time_adjusted[positive_time_ind]
           )
           try({
             temp <- data.frame(
@@ -727,18 +734,18 @@ for (save_dir in save_dirs) {
               codeae_pred_name <- codeae_drug_cols[codeae_i]
               codeae_predi <- dplyr::left_join(
                 data.frame(
-                  Sample = substr(cancer_sample_ptr[bin_treat_ind], 1, 15)
+                  Sample = substr(cancer_sample_ids[bin_treat_ptr], 1, 15)
                 ), 
                 codeae_predictions[,c("Sample", codeae_pred_name)], 
                 by = "Sample"
               )
               surv_df <- data.frame(
                 event = tcga_surv_data[
-                  cancer_surv_ind[bin_treat_ind], 
+                  cancer_surv_ptr[bin_treat_ptr], 
                   surv_event_col
-                ][time_adjusted_ind] == 1, 
-                time = time_adjusted[time_adjusted_ind],
-                sensitivity = codeae_predi[[codeae_pred_name]][time_adjusted_ind]
+                ][positive_time_ind] == 1, 
+                time = time_adjusted[positive_time_ind],
+                sensitivity = codeae_predi[[codeae_pred_name]][positive_time_ind]
               )
               surv_c <- survival::concordance(
                 survival::Surv(time, event) ~ sensitivity, 
@@ -760,12 +767,12 @@ for (save_dir in save_dirs) {
                 group = factor(
                   ifelse(codeae_predi[[codeae_pred_name]]>0.5, "high", "low"), 
                   levels = c("low", "high")
-                )[time_adjusted_ind], 
+                )[positive_time_ind], 
                 event = tcga_surv_data[
-                  cancer_surv_ind[bin_treat_ind], 
+                  cancer_surv_ptr[bin_treat_ptr], 
                   surv_event_col
-                ][time_adjusted_ind] == 1, 
-                time = time_adjusted[time_adjusted_ind]
+                ][positive_time_ind] == 1, 
+                time = time_adjusted[positive_time_ind]
               )
               try({
                 temp <- data.frame(
@@ -807,7 +814,7 @@ for (save_dir in save_dirs) {
                   surv_event_col, 
                   ".png"
                 )
-                save_figure_safe(
+                if (save_plots) save_figure_safe(
                   codeae_tcga_km, 
                   png, 
                   fn, 
@@ -822,14 +829,14 @@ for (save_dir in save_dirs) {
         } else {
           surv_df <- data.frame(
             event = tcga_surv_data[
-              cancer_surv_ind[tcga_nna_ind], 
+              cancer_surv_ptr[tcga_nna_ptr], 
               surv_event_col
             ] == 1, 
             time = tcga_surv_data[
-              cancer_surv_ind[tcga_nna_ind], 
+              cancer_surv_ptr[tcga_nna_ptr], 
               surv_time_col
             ],
-            sensitivity = tcga_risk_pred[tcga_nna_ind]
+            sensitivity = tcga_risk_pred[tcga_nna_ptr]
           )
           surv_c <- survival::concordance(
             survival::Surv(time, event) ~ sensitivity, 
@@ -845,13 +852,13 @@ for (save_dir in save_dirs) {
           concordance_results <- c(concordance_results, list(temp))
           
           tcga_sf <- survival_f(
-            group = tcga_risk_bin[tcga_nna_ind], 
+            group = tcga_risk_bin[tcga_nna_ptr], 
             event = tcga_surv_data[
-              cancer_surv_ind[tcga_nna_ind], 
+              cancer_surv_ptr[tcga_nna_ptr], 
               surv_event_col
             ] == 1, 
             time = tcga_surv_data[
-              cancer_surv_ind[tcga_nna_ind], 
+              cancer_surv_ptr[tcga_nna_ptr], 
               surv_time_col
             ]
           )
@@ -886,8 +893,8 @@ for (save_dir in save_dirs) {
         if (tcga_brca || scanb) {
           scanb_sf <- survival_f(
             group = scanb_risk_bin, 
-            event = scanb_surv_data[scanb_surv_ind, "OS_event"] == 1, 
-            time = scanb_surv_data[scanb_surv_ind, "OS_days"])
+            event = scanb_surv_data[scanb_surv_ptr, "OS_event"] == 1, 
+            time = scanb_surv_data[scanb_surv_ptr, "OS_days"])
           scanb_km <- GGally::ggsurv(scanb_sf, cens.shape = NA) + 
             theme_bw() + ylim(c(0,1)) + 
             km_color_scale
@@ -917,7 +924,7 @@ for (save_dir in save_dirs) {
             surv_event_col, 
             ".png"
           )
-          save_figure_safe(
+          if (save_plots) save_figure_safe(
             tcga_km, 
             png, 
             fn, 
@@ -930,21 +937,21 @@ for (save_dir in save_dirs) {
         if (length(single_drug_treat_id) > 1) {
           time_adjusted <- (
             tcga_surv_data[
-              cancer_surv_ind[single_drug_bin_treat_ind], 
+              cancer_surv_ptr[single_drug_bin_treat_ptr], 
               surv_time_col
             ] - (
-              treat_time[single_drug_time_ind] * 
+              treat_time[single_drug_time_ptr] * 
                 ifelse(pred_time_adjust, 1, 0)
             )
           )
-          time_adjusted_ind <- time_adjusted > 0
+          positive_time_ind <- time_adjusted > 0
           single_drug_tcga_sf <- survival_f(
-            group = tcga_risk_bin[single_drug_bin_treat_ind][time_adjusted_ind], 
+            group = tcga_risk_bin[single_drug_bin_treat_ptr][positive_time_ind], 
             event = tcga_surv_data[
-              cancer_surv_ind[single_drug_bin_treat_ind], 
+              cancer_surv_ptr[single_drug_bin_treat_ptr], 
               surv_event_col
-            ][time_adjusted_ind] == 1, 
-            time = time_adjusted[time_adjusted_ind]
+            ][positive_time_ind] == 1, 
+            time = time_adjusted[positive_time_ind]
           )
           group_colors <- c(
             low = "#4DAF4A", 
@@ -979,7 +986,7 @@ for (save_dir in save_dirs) {
             surv_event_col, 
             ".png"
           )
-          save_figure_safe(
+          if (save_plots) save_figure_safe(
             single_drug_tcga_km, 
             png, 
             fn, 
@@ -995,7 +1002,7 @@ for (save_dir in save_dirs) {
           clinical_surv_list <- list(
             tcga = list(
               group = factor(tcga_risk_bin, levels = c("mid", "low", "high")), 
-              data = tcga_surv_data[cancer_surv_ind,], 
+              data = tcga_surv_data[cancer_surv_ptr,], 
               vars = c(
                 "age_at_initial_pathologic_diagnosis", 
                 #"ajcc_pathologic_tumor_stage" # Too many subdivisions
@@ -1011,7 +1018,7 @@ for (save_dir in save_dirs) {
             ), 
             scanb = list(
               group = factor(scanb_risk_bin, c("mid", "low", "high")), 
-              data = scanb_surv_data[scanb_surv_ind,], 
+              data = scanb_surv_data[scanb_surv_ptr,], 
               vars = c(
                 "Age_group", 
                 "NHG", 
@@ -1046,7 +1053,7 @@ for (save_dir in save_dirs) {
                 pred_time_adjust
               ) {
                 # Adjust age by delay in treatment
-                temp[[j]] <- temp[[j]] + (treat_time[time_ind] / 365)
+                temp[[j]] <- temp[[j]] + (treat_time[time_ptr] / 365)
               }
               temp[[j]] <- scale(temp[[j]], center = TRUE, scale = TRUE)
             }
@@ -1136,6 +1143,12 @@ for (save_dir in save_dirs) {
     codeae_cox_results_df <- bind_rows(codeae_cox_results)
     codeae_km_results_df <- bind_rows(codeae_km_results)
     codeae_concordance_results_df <- bind_rows(codeae_concordance_results)
+    treated_pairs_n <- bind_rows(treated_pairs_n)
+    
+    # How many drugs?
+    length(tcga_drugs[!is.na(tcga_drug_in_ctrp)])
+    sum(apply(cancer_drug_counts[,tolower(tcga_drugs[!is.na(tcga_drug_in_ctrp)])] > 5,2,any))
+    length(unique(treated_pairs_n$drug))
     
     with(
       cox_results_df |> filter(var == "sensitivity"), 
@@ -1232,10 +1245,11 @@ for (save_dir in save_dirs) {
           codeae_survival_res_df[["drug_codeae"]] != "Sorafenib...51",
       ]
     )
-    res_na_ind <- is.na(comparative_survival_res_df[["km_logrank_p"]])
-    comparative_survival_res_df[["km_logrank_p"]][res_na_ind] <- 1
-    res_na_ind <- is.na(comparative_survival_res_df[["cox_coef_p"]])
-    comparative_survival_res_df[["cox_coef_p"]][res_na_ind] <- 1
+    # Substitute NA with 1 (could be misleading, since the cause can be many things)
+    #res_na_ind <- is.na(comparative_survival_res_df[["km_logrank_p"]])
+    #comparative_survival_res_df[["km_logrank_p"]][res_na_ind] <- 1
+    #res_na_ind <- is.na(comparative_survival_res_df[["cox_coef_p"]])
+    #comparative_survival_res_df[["cox_coef_p"]][res_na_ind] <- 1
     
     plyr::ddply(
       comparative_survival_res_df, 
@@ -1244,15 +1258,16 @@ for (save_dir in save_dirs) {
         c_mean = mean(concordance, na.rm = TRUE), 
         positive_c_mean = mean(concordance[concordance > 0.5], na.rm = TRUE), 
         negative_c_mean = mean(concordance[concordance < 0.5], na.rm = TRUE), 
-        km_rate = mean(km_logrank_p < 0.05), 
-        cox_rate = mean(cox_coef_p < 0.05), 
+        km_rate = mean(km_logrank_p < 0.05, na.rm = TRUE), 
+        cox_rate = mean(cox_coef_p < 0.05, na.rm = TRUE), 
         n_predictions = nrow(x)
       ))
     )
-    res_na_ind <- is.na(survival_res_df[["km_logrank_p"]])
-    survival_res_df[["km_logrank_p"]][res_na_ind] <- 1
-    res_na_ind <- is.na(survival_res_df[["cox_coef_p"]])
-    survival_res_df[["cox_coef_p"]][res_na_ind] <- 1
+    # Substitute NA with 1 (could be misleading, since the cause can be many things)
+    #res_na_ind <- is.na(survival_res_df[["km_logrank_p"]])
+    #survival_res_df[["km_logrank_p"]][res_na_ind] <- 1
+    #res_na_ind <- is.na(survival_res_df[["cox_coef_p"]])
+    #survival_res_df[["cox_coef_p"]][res_na_ind] <- 1
     
     plyr::ddply(
       survival_res_df[survival_res_df[["n"]] > 10,], 
@@ -1261,8 +1276,8 @@ for (save_dir in save_dirs) {
         c_mean = mean(concordance, na.rm = TRUE), 
         positive_c_mean = mean(concordance[concordance > 0.5], na.rm = TRUE), 
         negative_c_mean = mean(concordance[concordance < 0.5], na.rm = TRUE), 
-        km_rate = mean(km_logrank_p < 0.05), 
-        cox_rate = mean(cox_coef_p < 0.05), 
+        km_rate = mean(km_logrank_p < 0.05, na.rm = TRUE), 
+        cox_rate = mean(cox_coef_p < 0.05, na.rm = TRUE), 
         n_predictions = nrow(x)
       ))
     )
@@ -1284,14 +1299,15 @@ for (save_dir in save_dirs) {
       values_from = "n"
     )
     
+    # Check patient overlap between CODE-AE predictions and our predictions
     mean(
       substr(rownames(tcga_predictions), 1, 15) %in% 
         codeae_predictions[["Sample"]]
     )
     
+    # Check patient overlaps by cancer
     fn <- paste0(prediction_path, "internal/unified_patient_output_table.csv.gz")
     tcga_final_output_table <- readr::read_csv(fn)
-    
     table(
       substr(tcga_final_output_table[["id"]], 1, 15) %in% 
         codeae_predictions[["Sample"]],
@@ -1299,20 +1315,106 @@ for (save_dir in save_dirs) {
       useNA = "always"
     )
     
+    # Which Sorafenib prediction performs better?
+    codeae_survival_res_df |> filter(grepl("Sorafenib", drug_codeae))
+    
+    # Comprehensive comparison table
+    full_surv_comp_table_long <- bind_rows(
+      survival_res_df |> filter(drug != "survival_risk"),
+      codeae_survival_res_df |>
+        filter(drug_codeae != "Sorafenib...51") |>
+        select(-drug_codeae)
+    )
+    fn <- paste0(plot_path, "treatment_survival_comparison_long.csv")
+    readr::write_csv(full_surv_comp_table_long, fn)
+    full_surv_comp_table_wide <- tidyr::pivot_wider(
+      full_surv_comp_table_long,
+      id_cols = c("cancer", "survival", "drug"),
+      names_from = "method",
+      values_from = c("cox_coef", "cox_coef_p", "km_logrank_p", "concordance", "n")
+    )
+    fn <- paste0(plot_path, "treatment_survival_comparison_wide.csv")
+    readr::write_csv(full_surv_comp_table_wide, fn)
+    
+    survival_res_df |> filter(drug != "survival_risk") -> test
+    length(unique(test$drug))
+    
+    length(unique(full_surv_comp_table_long$drug))
+    length(unique(with(full_surv_comp_table_long, paste(drug, cancer))))
+    
+    shared_obs_concordance <- plyr::ddply(
+      full_surv_comp_table_wide,
+      c("drug", "survival"),
+      function(x) {
+        shared_obs <- with(x, !(is.na(concordance_MODAE) | is.na(`concordance_CODE-AE`)))
+        if (!any(shared_obs)) return(data.frame())
+        out <- with(
+          x,
+          data.frame(
+            MODAE_mean = mean(concordance_MODAE[shared_obs]),
+            MODAE_sd = sd(concordance_MODAE[shared_obs]),
+            `CODE-AE_mean` = mean(`concordance_CODE-AE`[shared_obs]),
+            `CODE-AE_sd` = sd(`concordance_CODE-AE`[shared_obs])
+          )
+        )
+        return(out)
+      }
+    )
+    fn <- paste0(plot_path, "treatment_survival_comparison_shared_obs_concordance.csv")
+    readr::write_csv(shared_obs_concordance, fn)
+    
+    shared_obs_km <- plyr::ddply(
+      full_surv_comp_table_wide,
+      c("drug", "survival"),
+      function(x) {
+        shared_obs <- with(x, !(is.na(km_logrank_p_MODAE) | is.na(`km_logrank_p_CODE-AE`)))
+        if (!any(shared_obs)) return(data.frame())
+        out <- with(
+          x,
+          data.frame(
+            MODAE_rate = mean(km_logrank_p_MODAE[shared_obs] < 0.05),
+            `CODE-AE_rate` = mean(`km_logrank_p_CODE-AE`[shared_obs] < 0.05)
+          )
+        )
+        return(out)
+      }
+    )
+    fn <- paste0(plot_path, "treatment_survival_comparison_shared_obs_km.csv")
+    readr::write_csv(shared_obs_km, fn)
+    
+    shared_obs_cox <- plyr::ddply(
+      full_surv_comp_table_wide,
+      c("drug", "survival"),
+      function(x) {
+        shared_obs <- with(x, !(is.na(cox_coef_p_MODAE) | is.na(`cox_coef_p_CODE-AE`)))
+        if (!any(shared_obs)) return(data.frame())
+        out <- with(
+          x,
+          data.frame(
+            MODAE_rate = mean(cox_coef_p_MODAE[shared_obs] < 0.05),
+            `CODE-AE_rate` = mean(`cox_coef_p_CODE-AE`[shared_obs] < 0.05)
+          )
+        )
+        return(out)
+      }
+    )
+    fn <- paste0(plot_path, "treatment_survival_comparison_shared_obs_cox.csv")
+    readr::write_csv(shared_obs_cox, fn)
+    
     # Survival across cancers
     # TODO: implement
     
     # Test Cox PH assumptions
     pi <- tcga_predictions
     
-    tcga_event <- tcga_surv_data[tcga_surv_ind, "OS"] == 1
-    tcga_time <- tcga_surv_data[tcga_surv_ind, "OS.time"]
+    tcga_event <- tcga_surv_data[tcga_surv_ptr, "OS"] == 1
+    tcga_time <- tcga_surv_data[tcga_surv_ptr, "OS.time"]
     
     tcga_event[tcga_time > 3000] <- FALSE
     tcga_time[tcga_time > 3000] <- 3000
     
     hazard_cols <- colnames(pi)[grep("survival_hazard_[0-9]+", colnames(pi))]
-    hazards <- pi[tcga_surv_ind, hazard_cols]
+    hazards <- pi[tcga_surv_ptr, hazard_cols]
     
     hazard_formula <- as.formula(
       paste0(
@@ -1329,14 +1431,14 @@ for (save_dir in save_dirs) {
     if (tcga_brca || scanb) {
       pi <- scanb_predictions
       
-      scanb_event <- scanb_surv_data[scanb_surv_ind, "OS_event"] == 1
-      scanb_time <- scanb_surv_data[scanb_surv_ind, "OS_days"]
+      scanb_event <- scanb_surv_data[scanb_surv_ptr, "OS_event"] == 1
+      scanb_time <- scanb_surv_data[scanb_surv_ptr, "OS_days"]
       
       scanb_event[scanb_time > 3000] <- FALSE
       scanb_time[scanb_time > 3000] <- 3000
       
       hazard_cols <- colnames(pi)[grep("survival_hazard_[0-9]+", colnames(pi))]
-      hazards <- pi[scanb_surv_ind, hazard_cols]
+      hazards <- pi[scanb_surv_ptr, hazard_cols]
       
       hazard_formula <- as.formula(
         paste0(
