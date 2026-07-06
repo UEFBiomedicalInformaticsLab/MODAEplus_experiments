@@ -70,7 +70,6 @@ apptainer run \
     --classifier_layers=32-128,16-64 \
     --deconfounder_layers_per_batch=2-8 \
     --batch_adversarial_gradient_penalty=1. \
-    --deconfounder_norm_penalty=1. \
     --drug_response_model_output_activation=relu \
     --learning_rate=0.000001-0.0001 \
     --adversarial_learning_rate_multi=10. \
