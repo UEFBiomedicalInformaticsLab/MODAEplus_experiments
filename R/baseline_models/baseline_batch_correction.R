@@ -203,8 +203,13 @@ if (!file.exists(fn)) {
 }
 
 oncotree <- jsonlite::fromJSON(json_str, flatten = TRUE)
-oncotree <- jsonlite::fromJSON("http://oncotree.mskcc.org/api/tumorTypes", 
-                               flatten = TRUE)
+oncotree_new <- jsonlite::fromJSON(
+  paste0(
+    "http://oncotree.mskcc.org/api/tumorTypes",
+    "?version=oncotree_2021_11_02"
+  ),
+  flatten = TRUE
+)
 oncotree_parent_map <- oncotree$parent
 names(oncotree_parent_map) <- oncotree$code
 oncotree_level_map <- oncotree$level
