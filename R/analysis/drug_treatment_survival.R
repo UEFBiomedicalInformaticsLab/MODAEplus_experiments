@@ -5,6 +5,7 @@ if (script_root == "") {
 source(paste0(script_root, "R/setup.R"))
 
 codeae_comparison <- TRUE
+baseline_comparison <- TRUE
 save_plots <- FALSE
 
 for (save_dir in save_dirs) {
@@ -171,6 +172,24 @@ for (save_dir in save_dirs) {
     codeae_predictions <- readr::read_csv(fn, show_col_types = FALSE)
     codeae_drug_cols <- colnames(codeae_predictions)[-1:-2]
     
+    baseline_models <- c(
+      "pca10_elasticnet",
+      "pca100_elasticnet",
+      "fs_elasticnet"
+    )
+    baseline_model_preds <- list()
+    for (i in baseline_models) {
+      fn <- file.path(
+        output_dir,
+        "baseline_results",
+        "drug_response",
+        "ctrp",
+        paste0(i, "_predictions.csv.gz")
+      )
+      baseline_model_preds[[i]] <- readr::read_csv(fn)
+      colnames(baseline_model_preds[[i]]) <- c("id", paste0("dr_pred_", 0:(n_drug_cols-1)))
+    }
+    
     drug_cols <- list()
     for (i in (1:length(tcga_drugs))[!is.na(tcga_drug_in_ctrp)]) {
       drug_cols <- c(
@@ -250,6 +269,9 @@ for (save_dir in save_dirs) {
     codeae_cox_results <- list()
     codeae_km_results <- list()
     codeae_concordance_results <- list()
+    baseline_cox_results <- list()
+    baseline_km_results <- list()
+    baseline_concordance_results <- list()
     treated_pairs_n <- list()
     
     for (i in 1:length(pred_cols)) {
@@ -556,6 +578,59 @@ for (save_dir in save_dirs) {
                 })
               }
             }
+            if (baseline_comparison) {
+              for (blmod in names(baseline_model_preds)) {
+                baseline_predi <- dplyr::left_join(
+                  data.frame(id = rownames(cox_table)), 
+                  baseline_model_preds[[blmod]][,c("id", pred_col)], 
+                  by = "id"
+                )
+                cox_table[["sensitivity"]] <- baseline_predi[[2]]
+                try({
+                  cox_model <- survival::coxph(cox_formula, data = cox_table)
+                  test <- summary(cox_model)
+                  temp <- data.frame(
+                    baseline_model = blmod,
+                    drug = pred_name, 
+                    cancer = canceri, 
+                    survival = surv_event_col, 
+                    var = rownames(test$coefficients), 
+                    coef = test$coefficients[,"coef"], 
+                    se_coef = test$coefficients[,"se(coef)"],
+                    z = test$coefficients[,"z"],
+                    p = test$coefficients[,"Pr(>|z|)"]
+                  )
+                  baseline_cox_results <- c(baseline_cox_results, list(temp))
+                })
+                try({
+                  cox_plot <- survminer::ggforest(
+                    cox_model, data = cox_table, fontsize = 0.6, main = NULL, 
+                    cpositions = c(0.02, 0.25, 0.5))
+                  fn <- paste0(
+                    canceri_path, 
+                    "/", 
+                    canceri, 
+                    "_",
+                    blmod,
+                    "_", 
+                    codeae_pred_name, 
+                    figure_str, 
+                    "_", 
+                    surv_event_col, 
+                    "_coxph.png"
+                  )
+                  if (save_plots) save_figure_safe(
+                    cox_plot, 
+                    png, 
+                    fb, 
+                    width = plot_width, 
+                    height = plot_height, 
+                    res = plot_res, 
+                    units = plot_units
+                  )
+                })
+              }
+            }
           }
           # Patients treated with only one drug
           single_drug_treat_id <- intersect(
@@ -664,6 +739,45 @@ for (save_dir in save_dirs) {
                     canceri, 
                     "_CODE-AE_", 
                     codeae_pred_name, 
+                    figure_str, 
+                    "_single_drug_", 
+                    surv_event_col, 
+                    "_coxph.png"
+                  )
+                  if (save_plots) save_figure_safe(
+                    cox_plot, 
+                    png, 
+                    fn, 
+                    width = plot_width, 
+                    height = plot_height, 
+                    res = plot_res, 
+                    units = plot_units
+                  )
+                })
+              }
+            }
+            if (baseline_comparison) {
+              for (blmod in names(baseline_model_preds)) {
+                baseline_predi <- dplyr::left_join(
+                  data.frame(id = rownames(sd_cox_table)), 
+                  baseline_model_preds[[blmod]][,c("id", pred_col)], 
+                  by = "id"
+                )
+                sd_cox_table[["sensitivity"]] <- baseline_predi[[2]]
+                sd_cox_table <- sd_cox_table[!is.na(sd_cox_table[["sensitivity"]]),]
+                try({
+                  cox_model <- survival::coxph(cox_formula, data = sd_cox_table)
+                  cox_plot <- survminer::ggforest(
+                    cox_model, data = sd_cox_table, fontsize = 0.6, main = NULL, 
+                    cpositions = c(0.02, 0.25, 0.5))
+                  fn <- paste0(
+                    canceri_path, 
+                    "/", 
+                    canceri, 
+                    "_",
+                    blmod,
+                    "_", 
+                    pred_name, 
                     figure_str, 
                     "_single_drug_", 
                     surv_event_col, 
@@ -816,6 +930,109 @@ for (save_dir in save_dirs) {
                 )
                 if (save_plots) save_figure_safe(
                   codeae_tcga_km, 
+                  png, 
+                  fn, 
+                  width = plot_width * 0.6, 
+                  height = plot_height, 
+                  res = plot_res, 
+                  units = plot_units
+                )
+              }
+            }
+          }
+          if (baseline_comparison) {
+            for (blmod in names(baseline_model_preds)) {
+              baseline_predi <- dplyr::left_join(
+                data.frame(id = cancer_sample_ids[bin_treat_ptr]), 
+                baseline_model_preds[[blmod]][,c("id", pred_col)], 
+                by = "id"
+              )
+              surv_df <- data.frame(
+                event = tcga_surv_data[
+                  cancer_surv_ptr[bin_treat_ptr], 
+                  surv_event_col
+                ][positive_time_ind] == 1, 
+                time = time_adjusted[positive_time_ind],
+                sensitivity = baseline_predi[[pred_col]][positive_time_ind]
+              )
+              surv_c <- survival::concordance(
+                survival::Surv(time, event) ~ sensitivity, 
+                data = surv_df
+              )
+              temp <- data.frame(
+                drug = pred_name, 
+                baseline_model = blmod, 
+                cancer = canceri, 
+                survival = surv_event_col, 
+                concordance = surv_c$concordance, 
+                n = surv_c$n
+              )
+              baseline_concordance_results <- c(
+                baseline_concordance_results, 
+                list(temp)
+              )
+              baseline_tcga_risk_pred <- dplyr::left_join(
+                data.frame(id = cancer_sample_ids), 
+                baseline_model_preds[[blmod]][,c("id", pred_col)], 
+                by = "id"
+              )
+              baseline_group = cut(
+                baseline_tcga_risk_pred[[pred_col]], 
+                breaks = c(-Inf, mean(baseline_tcga_risk_pred[[pred_col]], na.rm = TRUE), Inf), 
+                labels = c("low", "high"))
+              baseline_tcga_sf <- survival_f(
+                group = baseline_group[bin_treat_ptr][positive_time_ind], 
+                event = tcga_surv_data[
+                  cancer_surv_ptr[bin_treat_ptr], 
+                  surv_event_col
+                ][positive_time_ind] == 1, 
+                time = time_adjusted[positive_time_ind]
+              )
+              try({
+                temp <- data.frame(
+                  drug = pred_name, 
+                  baseline_model = blmod, 
+                  cancer = canceri, 
+                  survival = surv_event_col, 
+                  p = attributes(baseline_tcga_sf)$survival_pvalue$pval
+                )
+                baseline_km_results <- c(baseline_km_results, list(temp))
+              })
+              if (!is.null(baseline_tcga_sf)) {
+                group_colors <- c("#4DAF4A", "#377EB8", "#E41A1C")
+                names(group_colors) <- c("low", "medium", "high")
+                km_color_scale <- scale_color_manual(values = group_colors)
+                plot_title <- paste(
+                  blmod,
+                  canceri,
+                  pred_name,
+                  "survival", 
+                  attributes(baseline_tcga_sf)$survival_pvalue["pval.txt"]
+                )
+                baseline_tcga_km <- GGally::ggsurv(
+                  baseline_tcga_sf, 
+                  cens.shape = 3, 
+                  order.legend = FALSE
+                ) + 
+                  theme_bw() + 
+                  ylim(c(0,1)) + 
+                  km_color_scale + 
+                  ggtitle(plot_title)
+                fn <- paste0(
+                  canceri_path, 
+                  "/", 
+                  canceri, 
+                  "_",
+                  blmod,
+                  "_", 
+                  pred_name, 
+                  figure_str, 
+                  "_", 
+                  surv_event_col, 
+                  ".png"
+                )
+                if (save_plots) save_figure_safe(
+                  baseline_tcga_km, 
                   png, 
                   fn, 
                   width = plot_width * 0.6, 
@@ -1143,6 +1360,9 @@ for (save_dir in save_dirs) {
     codeae_cox_results_df <- bind_rows(codeae_cox_results)
     codeae_km_results_df <- bind_rows(codeae_km_results)
     codeae_concordance_results_df <- bind_rows(codeae_concordance_results)
+    baseline_cox_results_df <- bind_rows(baseline_cox_results)
+    baseline_km_results_df <- bind_rows(baseline_km_results)
+    baseline_concordance_results_df <- bind_rows(baseline_concordance_results)
     treated_pairs_n <- bind_rows(treated_pairs_n)
     
     # How many drugs?
@@ -1150,36 +1370,15 @@ for (save_dir in save_dirs) {
     sum(apply(cancer_drug_counts[,tolower(tcga_drugs[!is.na(tcga_drug_in_ctrp)])] > 5,2,any))
     length(unique(treated_pairs_n$drug))
     
-    with(
-      cox_results_df |> filter(var == "sensitivity"), 
-      table(p_sig = p < 0.05, survival)
-    )
-    with(km_results_df, table(p_sig = p < 0.05, survival))
-    
-    with(
-      codeae_cox_results_df |> filter(var == "sensitivity"), 
-      table(p_sig = p < 0.05, survival)
-    )
-    with(codeae_km_results_df, table(p_sig = p < 0.05, survival))
-    
-    codeae_cox_results_df |> filter(var == "sensitivity" & cancer == "LUSC")
-    codeae_km_results_df |> filter(cancer == "LUSC")
-    
-    observed_concordances <- with(
-      concordance_results_df, 
-      split(drug, cancer)
-    )
-    codeae_observed_concordances <- with(
-      codeae_concordance_results_df,
-      split(drug, cancer)
-    )
-    
     cox_cleaner <- function(x) {
       out <- x |> filter(var == "sensitivity")
       sel_cols <- c("drug")
       if ("drug_codeae" %in% colnames(x)) {
         sel_cols <- c(sel_cols, "drug_codeae")
-      } 
+      }
+      if ("baseline_model" %in% colnames(x)) {
+        sel_cols <- c(sel_cols, "baseline_model")
+      }
       sel_cols <- c(
         sel_cols, 
         "cancer", 
@@ -1201,12 +1400,16 @@ for (save_dir in save_dirs) {
       if ("drug_codeae" %in% colnames(x)) {
         sel_cols <- c(sel_cols, "drug_codeae")
       }
+      if ("baseline_model" %in% colnames(x)) {
+        sel_cols <- c(sel_cols, "baseline_model")
+      }
       sel_cols <- c(sel_cols, "cancer", "survival", "p")
       out <- x[, sel_cols]
       colnames(out)[ncol(out)] <- "km_logrank_p"
       return(out)
     }
     
+    # MODAE tables
     survival_res_df <- dplyr::full_join(
       cox_cleaner(cox_results_df), 
       km_cleaner(km_results_df), 
@@ -1219,6 +1422,7 @@ for (save_dir in save_dirs) {
     )
     survival_res_df[["method"]] <- "MODAE"
     
+    # CODE-AE tables
     codeae_survival_res_df <- dplyr::full_join(
       cox_cleaner(codeae_cox_results_df), 
       km_cleaner(codeae_km_results_df), 
@@ -1231,73 +1435,19 @@ for (save_dir in save_dirs) {
     )
     codeae_survival_res_df[["method"]] <- "CODE-AE"
     
-    comparative_survival_res_df <- dplyr::bind_rows(
-      dplyr::left_join(
-        dplyr::distinct(codeae_survival_res_df[
-          codeae_survival_res_df[["n"]] > 10, 
-          c("drug", "cancer", "survival")
-        ]), 
-        survival_res_df, 
-        by = c("drug", "cancer", "survival")
-      ), 
-      codeae_survival_res_df[
-        codeae_survival_res_df[["n"]] > 10 & 
-          codeae_survival_res_df[["drug_codeae"]] != "Sorafenib...51",
-      ]
+    # Baseline tables
+    baseline_survival_res_df <- dplyr::full_join(
+      cox_cleaner(baseline_cox_results_df), 
+      km_cleaner(baseline_km_results_df), 
+      by = c("drug", "baseline_model", "cancer", "survival")
     )
-    # Substitute NA with 1 (could be misleading, since the cause can be many things)
-    #res_na_ind <- is.na(comparative_survival_res_df[["km_logrank_p"]])
-    #comparative_survival_res_df[["km_logrank_p"]][res_na_ind] <- 1
-    #res_na_ind <- is.na(comparative_survival_res_df[["cox_coef_p"]])
-    #comparative_survival_res_df[["cox_coef_p"]][res_na_ind] <- 1
-    
-    plyr::ddply(
-      comparative_survival_res_df, 
-      c("method", "survival"), 
-      function(x) with(x, data.frame(
-        c_mean = mean(concordance, na.rm = TRUE), 
-        positive_c_mean = mean(concordance[concordance > 0.5], na.rm = TRUE), 
-        negative_c_mean = mean(concordance[concordance < 0.5], na.rm = TRUE), 
-        km_rate = mean(km_logrank_p < 0.05, na.rm = TRUE), 
-        cox_rate = mean(cox_coef_p < 0.05, na.rm = TRUE), 
-        n_predictions = nrow(x)
-      ))
+    baseline_survival_res_df <- dplyr::full_join(
+      baseline_survival_res_df, 
+      baseline_concordance_results_df, 
+      by = c("drug", "baseline_model", "cancer", "survival")
     )
-    # Substitute NA with 1 (could be misleading, since the cause can be many things)
-    #res_na_ind <- is.na(survival_res_df[["km_logrank_p"]])
-    #survival_res_df[["km_logrank_p"]][res_na_ind] <- 1
-    #res_na_ind <- is.na(survival_res_df[["cox_coef_p"]])
-    #survival_res_df[["cox_coef_p"]][res_na_ind] <- 1
-    
-    plyr::ddply(
-      survival_res_df[survival_res_df[["n"]] > 10,], 
-      c("method", "survival"), 
-      function(x) with(x, data.frame(
-        c_mean = mean(concordance, na.rm = TRUE), 
-        positive_c_mean = mean(concordance[concordance > 0.5], na.rm = TRUE), 
-        negative_c_mean = mean(concordance[concordance < 0.5], na.rm = TRUE), 
-        km_rate = mean(km_logrank_p < 0.05, na.rm = TRUE), 
-        cox_rate = mean(cox_coef_p < 0.05, na.rm = TRUE), 
-        n_predictions = nrow(x)
-      ))
-    )
-    
-    problem_cancers <- c("UCEC", "LIHC", "KIRC", "ESCA")
-    
-    tidyr::pivot_wider(
-      comparative_survival_res_df[
-        comparative_survival_res_df[["cancer"]] %in% problem_cancers & 
-          (
-            comparative_survival_res_df[["drug"]] != "Sorafenib" |
-              is.na(comparative_survival_res_df[["drug_codeae"]]) |
-              comparative_survival_res_df[["drug_codeae"]] != "Sorafenib...51"
-          ),
-        c("method", "cancer", "survival", "drug", "n")
-      ], 
-      id_cols = c("cancer", "survival", "drug"), 
-      names_from = "method", 
-      values_from = "n"
-    )
+    baseline_survival_res_df[["method"]] <- baseline_survival_res_df[["baseline_model"]]
+    baseline_survival_res_df[["baseline_model"]] <- NULL
     
     # Check patient overlap between CODE-AE predictions and our predictions
     mean(
@@ -1315,7 +1465,7 @@ for (save_dir in save_dirs) {
       useNA = "always"
     )
     
-    # Which Sorafenib prediction performs better?
+    # Which Sorafenib prediction performs better for CODE-AE?
     codeae_survival_res_df |> filter(grepl("Sorafenib", drug_codeae))
     
     # Comprehensive comparison table
@@ -1323,7 +1473,8 @@ for (save_dir in save_dirs) {
       survival_res_df |> filter(drug != "survival_risk"),
       codeae_survival_res_df |>
         filter(drug_codeae != "Sorafenib...51") |>
-        select(-drug_codeae)
+        select(-drug_codeae),
+      baseline_survival_res_df
     )
     fn <- paste0(plot_path, "treatment_survival_comparison_long.csv")
     readr::write_csv(full_surv_comp_table_long, fn)
@@ -1336,11 +1487,17 @@ for (save_dir in save_dirs) {
     fn <- paste0(plot_path, "treatment_survival_comparison_wide.csv")
     readr::write_csv(full_surv_comp_table_wide, fn)
     
-    survival_res_df |> filter(drug != "survival_risk") -> test
-    length(unique(test$drug))
-    
-    length(unique(full_surv_comp_table_long$drug))
-    length(unique(with(full_surv_comp_table_long, paste(drug, cancer))))
+    # Compact summary
+    library(magrittr)
+    library(dplyr)
+    full_surv_comp_table_long %>%
+      group_by(method, survival) %>%
+      summarise(
+        ci_mean=mean(ifelse(is.na(concordance), 0.5, concordance)),
+        km_sig_rate=mean(ifelse(is.na(km_logrank_p), 1, km_logrank_p) < 0.05),
+        cox_sig_rate=mean(ifelse(is.na(cox_coef_p), 1, cox_coef_p) < 0.05),
+        n=n()
+      )
     
     shared_obs_concordance <- plyr::ddply(
       full_surv_comp_table_wide,

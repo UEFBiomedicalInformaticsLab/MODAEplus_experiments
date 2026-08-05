@@ -10,6 +10,7 @@ import argparse
 import os
 import sys
 import re
+import json
 
 import pandas as pd
 import numpy as np
@@ -43,7 +44,15 @@ drm = importlib.util.module_from_spec(drm_spec)
 sys.modules['baseline_dr_models'] = drm
 drm_spec.loader.exec_module(drm)
 
-#%%
+#%% environment
+output_path = os.environ.get('MODAE_OUTPUT_PATH', default = None)
+if output_path is None:
+    raise ValueError('Please define MODAE_OUTPUT_PATH')
+data_root = os.environ.get('MODAE_DATA_PATH', default = None)
+if data_root is None:
+    raise ValueError('Please define MODAE_DATA_PATH')
+
+#%% imports
 
 from dataset_collections import get_tcga_brca_ctrp_ccle_full
 from baseline_dr_data import load_sensitivity_data, load_old_sensitivity_data
@@ -52,221 +61,199 @@ from baseline_dr_models import nested_train_eval_drugwise
 from sklearn.preprocessing import StandardScaler
 from sklearn.decomposition import PCA
 from sklearn.linear_model import ElasticNet
-from sklearn.ensemble import GradientBoostingRegressor
+from sklearn.ensemble import GradientBoostingRegressor, RandomForestRegressor
 
 from sklearn.feature_selection import SelectKBest, f_regression
 from sklearn.pipeline import Pipeline
-from sklearn.model_selection import GroupKFold
+from sklearn.model_selection import GroupKFold, ParameterGrid
+from sklearn.metrics import mean_squared_error, r2_score
+from sklearn.base import clone
 
 from threadpoolctl import threadpool_limits, threadpool_info
 
-#thread_limit = 20
-
-#%%
-
-def eval_genes(X, y, gene_lists, dr_model):
-    drij_r2 = []
-    for genes in gene_lists:
-        with threadpool_limits(limits = 1, user_api = 'blas'):
-            m = dr_model.fit(X[:, genes], y)
-            drij_r2.append(m.score(X[:, genes], y))
-    return drij_r2
+from modae.evaluation_utilities import cross_validation_index
+from modae.data_utilities import data_serialization
 
 #%% Main
 def main(
-        root_dir,
-        cl_exp_root = None, 
-        cl_dr_root = None, 
-        identical_data = False,
-        old_data = False, 
-        gene_preselection = False, 
-        drug_features = '', 
-        response_sources = 'CTRP', 
-        feature_selection_only = False,
-        multivariate_fs = False, 
-        fs_n_features = 5000, 
-        threads = 1, 
-        target = 'AAC1', 
+        data_root_dir,
         result_file = '',
-        standardize = False, 
+        data_standardize = True, 
         use_pca = False, 
         pca_npc = 100, 
-        model = 'elasticnet'
+        model_name = 'elasticnet'
 ):
-    os.makedirs(root_dir, exist_ok=True)
-    if identical_data:
-        data_dict_combined = get_tcga_brca_ctrp_ccle_full(
-            home = False, 
-            gene_preselection = gene_preselection
-        )
-        ind = np.argwhere(data_dict_combined['dr_table_mask'])
-        ccle_ids = data_dict_combined['cl_exp_rows']
-        drug_ids = data_dict_combined['dr_table_cols']
-        cl_exp_df = pd.DataFrame(
-            data_dict_combined['cl_exp'], 
-            index = ccle_ids, 
-            columns = data_dict_combined['gene_ids'])
-        key_df = pd.DataFrame({
-            'CCLE_ID' : ccle_ids[ind[:,0]], 
-            'CTRP_TREAT_ID' : drug_ids[ind[:,1]], 
-            'AAC' : data_dict_combined['dr_table'][ind[:,0], ind[:,1]]
-        })
-        data_dict = {'X_key' : key_df, 'cl_rnaseq' : cl_exp_df}
-    elif old_data:
-        data_dict = load_old_sensitivity_data(
-            cell_line_expression_root_dir = cl_exp_root, 
-            cell_line_drug_response_root_dir = cl_dr_root
-        )
-    else:
-        data_dict = load_sensitivity_data(
-            root_dir = root_dir, 
-            drug_features = [i.strip() for i in drug_features.split(',')], 
-            response_sources = [i.strip() for i in response_sources.split(',')])
-    
-    if feature_selection_only:
-        fs_dict = {}
-        key_df = data_dict['X_key']
-        exp_mat = data_dict['cl_rnaseq']
-        drug_col = 'CTRP_TREAT_ID'
-        clid_col = 'CCLE_ID'
-        res_col = 'AAC'
-        drug_names = key_df[drug_col].unique()
-        
-        if multivariate_fs:
-            # Manual forward selection
-            from sklearn.linear_model import ElasticNet
-            from sklearn.preprocessing import StandardScaler
-            from multiprocessing import Pool
-            from copy import copy
-            
-            gene_names = exp_mat.columns.to_numpy()
-            in_gene_list = np.arange(exp_mat.shape[1]).tolist()
-            out_gene_list = []
-            dr_r2_df_list = []
-            dr_model = ElasticNet(alpha = 1e-3, l1_ratio = 0.9, max_iter = 100)
-            
-            X_scaler = StandardScaler()
-            X_all = X_scaler.fit_transform(exp_mat.to_numpy())
-            X_list = []
-            y_list = []
-            for dn in drug_names:
-                res_df = key_df.loc[key_df[drug_col] == dn,:]
-                cl_ind = [exp_mat.index.get_loc(i) for i in res_df[clid_col]]
-                X_list.append(X_all[cl_ind, :])
-                y_list.append(res_df[res_col].to_numpy())
-            for i in np.arange(fs_n_features):
-                dri_r2 = []
-                gene_lists = [out_gene_list + [j] for j in in_gene_list]
-                with Pool(processes = threads) as mp:
-                    map_iterator = [(X, y, gene_lists, copy(dr_model)) for X, y in zip(X_list, y_list)]
-                    for res in mp.starmap(eval_genes, map_iterator):
-                        dri_r2.append(res)
-                dri_r2 = np.array(dri_r2)
-                dri_r2_mean = dri_r2.mean(axis = 0)
-                j_max = np.argmax(dri_r2_mean)
-                j_max_gene = in_gene_list.pop(j_max)
-                out_gene_list.append(j_max_gene)
-                res_df = pd.DataFrame({
-                    'gene' : [gene_names[j_max_gene]], 
-                    'R2_mean' : [dri_r2_mean[j_max]], 
-                })
-                fn = os.path.join(root_dir, result_file)
-                res_df.to_csv(fn, mode = 'a')
-        else:
-            for dn in drug_names:
-                res_df = key_df.loc[key_df[drug_col] == dn,:]
-                with threadpool_limits(limits = threads, user_api = 'blas'):
-                    f,p = f_regression(
-                        exp_mat.loc[res_df[clid_col]].to_numpy(), 
-                        res_df[res_col].to_numpy())
-                #fs_dict[dn] = exp_mat.columns[p < 0.01]
-                fs_dict[dn] = exp_mat.columns[np.argsort(p)[:10]]
-            fs_all = np.concatenate([i for i in fs_dict.values()])
-            fs_all_uq = np.unique(fs_all)
-            fs_symbols = [re.sub(' \\([0-9]+\\)', '', i) for i in fs_all_uq]
-            with open(os.path.join(root_dir, 'top10_univariate_genes_combined.txt'), 'w') as f:
-                f.writelines([f"{i}\n" for i in fs_symbols])
-    
-    if standardize:
-        scaler_instance = StandardScaler()
-    else:
-        scaler_instance = None
+    os.makedirs(output_path, exist_ok=True)
+    # Load and process data
+    from dataset_collections import get_xia_ctrp_data_combat
+    data_dict = get_xia_ctrp_data_combat(
+        data_root = data_root, 
+        tissue_classifier = True, # Matching processing
+        include_metas_labels = True, 
+        exclude_metas_data = False
+    )
+    # Use data serialization function to replicate MODAE splits
+    cv_data = data_serialization(
+        data_dict,
+        nruns = 1,
+        nfolds = 5,
+        stratify_survival = True,
+        stratify_subtype = True,
+        stratify_dr = True,
+        stratify_time_quantiles = 10,
+        cv_seed = 0, # first run + 0 starting seed
+        model_args = {'drug_response_model': True},
+        data_standardize = True,
+        shared_scaler = False,
+        omics_layer = 'mrna',
+        ps_validation_sets = True,
+        ps_test_sets = True,
+        return_data = True
+    )
+    # Define model
     if use_pca:
-        pca_instance = PCA(n_components = pca_npc, whiten = True)
-    else:
-        pca_instance = None
-    
-    if model == 'elasticnet':
+        pca = PCA(n_components = pca_npc, whiten = True)
+    if model_name == 'elasticnet':
         model = ElasticNet(max_iter = 100, random_state = 2)
         param_grid = {
             'alpha' : 10**np.linspace(-3, 0, 11), 
-            'l1_ratio' : np.power(np.linspace(0.1**4, 0.99**4, 11), 1./4.)}
-    elif model == 'fs_elasticnet':
+            'l1_ratio' : np.power(np.linspace(0.1**4, 0.99**4, 11), 1./4.)
+        }
+    elif model_name == 'fs_elasticnet':
         eln_model = ElasticNet(max_iter = 100, random_state = 2)
         model = Pipeline(steps = [
             ('fs', SelectKBest(score_func = f_regression)), 
-            ('eln', eln_model)])
+            ('eln', eln_model)
+        ])
         param_grid = {
-            'fs__k' : np.linspace(100, 1000, 3).astype('int64'), 
+            'fs__k' : np.linspace(100, 1000, 3).astype('int64').tolist(), 
             'eln__alpha' : 10**np.linspace(-3, -1, 3), 
-            'eln__l1_ratio' : np.power(np.linspace(0.1**4, 0.99**4, 3), 1./4.)}
-    elif model == 'gbt':
+            'eln__l1_ratio' : np.power(np.linspace(0.1**4, 0.99**4, 3), 1./4.)
+        }
+    elif model_name == 'gbt':
         param_grid = {
-            'max_depth' : np.arange(3, 10), 
+            'max_depth' : np.arange(3, 10).tolist(), 
             'ccp_alpha' : 10**np.linspace(-3, 0, 4),
-            'learning_rate' : 10**np.linspace(-3, -1, 5)}
+            'learning_rate' : 10**np.linspace(-3, -1, 5)
+        }
         model = GradientBoostingRegressor(
             n_estimators = 200, 
             loss = 'squared_error',
-            random_state = 2)
-    elif model == 'fs_gbt':
+            random_state = 2
+        )
+    elif model_name == 'fs_gbt':
         gbr_model = GradientBoostingRegressor(
             n_estimators = 200, 
             loss = 'squared_error',
-            random_state = 2)
+            random_state = 2
+        )
         model = Pipeline(steps = [
             ('fs', SelectKBest(score_func = f_regression)), 
-            ('gbt', gbr_model)])
+            ('gbt', gbr_model)
+        ])
         param_grid = {
-            'fs__k' : np.linspace(100, 1000, 3).astype('int64'), 
+            'fs__k' : np.linspace(100, 1000, 3).astype('int64').tolist(), 
             'gbt__max_depth' : np.arange(2, 9, 2), 
             'gbt__ccp_alpha' : 10**np.linspace(-3, 0, 4), 
-            'gbt__learning_rate' : np.power(np.linspace(0.1**4, 0.99**4, 3), 1./4.)}
-    
-    if old_data or identical_data:
-        res = nested_train_eval_drugwise(
-            model = model, 
-            param_grid = param_grid, 
-            key_df = data_dict['X_key'], 
-            y_col = 'AAC', 
-            drug_col = 'CTRP_TREAT_ID', 
-            cell_col = 'CCLE_ID', 
-            cl_exp_df = data_dict['cl_rnaseq'], 
-            scaler_instance = scaler_instance, 
-            pca_instance = pca_instance, 
-            cv_outer = GroupKFold(n_splits = 5), 
-            cv_inner = GroupKFold(n_splits = 5), 
-            group_col = 'cell', 
-            thread_limit = threads)
-        res['target'] = 'aac_old'
-    else:
-        res = nested_train_eval_drugwise(
-            model = model, 
-            param_grid = param_grid, 
-            key_df = data_dict['X_key'], 
-            y_col = target, 
-            drug_col = 'DRUG', 
-            cell_col = 'CELL', 
-            cl_exp_df = data_dict['cl_rnaseq'], 
-            scaler_instance = scaler_instance, 
-            pca_instance = pca_instance, 
-            cv_outer = GroupKFold(n_splits = 5), 
-            cv_inner = GroupKFold(n_splits = 5), 
-            group_col = 'cell', 
-            thread_limit = threads)
-        res['target'] = target
-    
-    res.to_csv(os.path.join(root_dir, result_file))
+            'gbt__learning_rate' : np.power(np.linspace(0.1**4, 0.99**4, 3), 1./4.)
+        }
+    # Run CV with nested train test split
+    result_list = []
+    for par_dict in ParameterGrid(param_grid):
+        # Outer CV
+        for run in cv_data.keys():
+            for fold in cv_data[run].keys():
+                for (trainset_name, testset_name), setkey in [(('train', 'validation'), 'ps_cv_'), (('retrain', 'test'), 'test_cv_')]:
+                    sliced_data = cv_data[run][fold][setkey]['cell_line']
+                    X = sliced_data['train']['expression']
+                    X_test = sliced_data['test']['expression']
+                    if use_pca:
+                        pca_inst = clone(pca)
+                        X = pca_inst.fit_transform(X)
+                        X_test = pca_inst.transform(X_test)
+                    n_drugs = sliced_data['train']['drug_response'].shape[1]
+                    for drugi in np.arange(n_drugs):
+                        model_inst = clone(model)
+                        model_inst = model_inst.set_params(**par_dict)
+                        maski = sliced_data['train']['drug_response_mask'][:,drugi]
+                        maski_test = sliced_data['test']['drug_response_mask'][:,drugi]
+                        Xi = X[maski,:]
+                        Xi_test = X_test[maski_test,:]
+                        yi = sliced_data['train']['drug_response'][maski, drugi]
+                        yi_test = sliced_data['test']['drug_response'][maski_test, drugi]
+                        model_inst = model_inst.fit(Xi, yi)
+                        yi_pred = model_inst.predict(Xi)
+                        yi_test_pred = model_inst.predict(Xi_test)
+                        mse = mean_squared_error(yi, yi_pred)
+                        mse_test = mean_squared_error(yi_test, yi_test_pred)
+                        r2 = mean_squared_error(yi, yi_pred)
+                        r2_test = mean_squared_error(yi_test, yi_test_pred)
+                        predi_df = pd.DataFrame({
+                            'run': run,
+                            'fold': fold,
+                            'set': [trainset_name, testset_name],
+                            'params': json.dumps(par_dict),
+                            'drugi': drugi,
+                            'mse': [mse, mse_test],
+                            'r2': [r2, r2_test]
+                        })
+                        result_list.append(predi_df)
+    model_str = f'pca{pca_npc}_' if use_pca else ''
+    model_str += model_name
+    result_file = os.path.join(output_path, f'baseline_results/drug_response/ctrp/{model_str}_metrics.csv.gz')
+    result_df = pd.concat(result_list)
+    result_df.to_csv(result_file)
+    prediction_file = os.path.join(output_path, f'baseline_results/drug_response/ctrp/{model_str}_predictions.csv.gz')
+    if prediction_file:
+        # Select best model for final training
+        test_df = result_df.loc[result_df['set'] == 'test']
+        r2_q90 = test_df.groupby(['params', 'run', 'fold']).agg(
+            func = {
+                'r2': lambda x: np.quantile(x, 0.9)
+            },
+            axis = 0
+        )
+        r2_q90_mean = r2_q90.groupby(['params']).agg(func =  {'r2': 'mean'}, axis = 0)
+        best_params_str = r2_q90_mean['r2'].idxmax(axis = 0)
+        best_params = json.loads(best_params_str)
+        # Final training
+        prediction_list = []
+        X = data_dict['cl_exp']
+        scaler = StandardScaler().fit(X)
+        X = scaler.transform(X)
+        X_target = data_dict['patient_exp']
+        X_target = scaler.transform(X_target)
+        if use_pca:
+            pca_inst = clone(pca)
+            X = pca_inst.fit_transform(X)
+            X_target = pca_inst.transform(X_target)
+        n_drugs = data_dict['dr_table'].shape[1]
+        preds = np.full((X.shape[0], n_drugs), np.nan)
+        preds_target = np.full((X_target.shape[0], n_drugs), np.nan)
+        for drugi in np.arange(n_drugs):
+            model_inst = clone(model)
+            model_inst = model_inst.set_params(**best_params)
+            maski = data_dict['dr_table_mask'][:,drugi]
+            Xi = X[maski,:]
+            yi = data_dict['dr_table'][maski, drugi]
+            model_inst = model_inst.fit(Xi, yi)
+            yi_pred = model_inst.predict(X)
+            yi_target_pred = model_inst.predict(X_target)
+            preds[:,drugi] = yi_pred
+            preds_target[:,drugi] = yi_target_pred
+        pred_df = pd.DataFrame(
+            preds,
+            index = data_dict['cl_exp_rows'],
+            columns = data_dict['dr_table_cols']
+        )
+        pred_target_df = pd.DataFrame(
+            preds_target,
+            index = data_dict['patient_rows'],
+            columns = data_dict['dr_table_cols']
+        )
+        pred_df = pd.concat([pred_df, pred_target_df], axis = 0)
+        pred_df.to_csv(prediction_file)
+    #res.to_csv(os.path.join(data_root_dir, result_file))
 
 if __name__ == '__main__':
     desc_str = 'Command line tool for evaluating several drug sensitivity models. \
