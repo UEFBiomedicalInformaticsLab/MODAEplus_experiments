@@ -344,9 +344,6 @@ for (save_dir in save_dirs) {
       metrics_table_full <- final_metrics
     }
     
-    if (!inherits(parameters, "list")) {
-      
-    }
     parameter_performance_table <- outer_join(metrics_table, parameters)
     
     # Objective balance
@@ -503,22 +500,63 @@ for (save_dir in save_dirs) {
     pp_table[["log10_pre_learning_rate_dr"]] <- log10(pp_table[["pre_learning_rate_dr"]])
     pp_table[["log10_pre_learning_rate_bd"]] <- log10(pp_table[["pre_learning_rate_bd"]])
     pp_table[["log10_pre_learning_rate_bc"]] <- log10(pp_table[["pre_learning_rate_bc"]])
-    pp_table[["log10_pre_learning_rate_bc"]] <- log10(pp_table[["pre_learning_rate_bc"]])
-    pp_relevant <- c(
-      paste0("encoder_layer", 1:2), "bottle_neck", paste0("decoder_layer", 1:2), 
-      paste0("survival_model_layer", 1:2), #paste0("classifier_layer", 1:2), 
-      paste0("drug_response_model_layer", 1:2), paste0("batch_adversarial_model_layer", 1:2), 
-      paste0("dropout_", c("input", "autoencoder", "survival", "drug_response", "batch")), #"classifier", 
-      paste0("log10_", c("", rep("pre_", 5)), "learning_rate", c("", "_ae", "_sr", "_dr", "_bd", "_bc")), #"_cl", 
-      paste0(c("reconstruction", "survival", "drug", "batch"), "_weight"), #"classifier", 
-      "log10_alpha", "deconfounder_norm_penalty", "deconfounder_layers_per_batch", 
-      "batch_adversarial_gradient_penalty", "log10_adversarial_learning_rate",
-      "weight_optimizer_args.weight_decay", "drug_response_model_drugwise_layers"
+    relevant_parameters <- c(
+      paste0("encoder_layer", 1:2),
+      "bottle_neck",
+      paste0("decoder_layer", 1:2),
+      paste0("survival_model_layer", 1:2),
+      paste0("classifier_layer", 1:2),
+      paste0("drug_response_model_layer", 1:2),
+      "drug_response_model_drugwise_layers",
+      paste0("batch_adversarial_model_layer", 1:2),
+      "deconfounder_layers_per_batch",
+      paste0("dropout_", c("input", "autoencoder", "survival", "drug_response", "batch", "classifier")),
+      "log10_learning_rate",
+      #paste0("log10_pre_learning_rate", c("_ae", "_sr", "_dr", "_bd", "_bc", "_cl")),
+      "log10_adversarial_learning_rate",
+      #paste0(c("reconstruction", "survival", "drug", "batch"), "_weight"), #"classifier",
+      "log10_alpha",
+      #"deconfounder_norm_penalty",
+      "batch_adversarial_gradient_penalty",
+      "weight_optimizer_args.weight_decay"
     )
     #colnames(pp_table)[grep("learning_rate", colnames(pp_table))]
-    
-    # Should probably work in python instead
-    write.csv(pp_table[, pp_relevant[pp_relevant %in% colnames(pp_table)]], paste0(save_path, "objective_x.csv"))
+    objective_rename_map <- c(
+      dr_cl_train_parameter_search_R2_Q90 = "CL_DR_R2_Q90_training",
+      ps_patient_train_surv_c = "P_SURV_C_training",
+      tissue_class_cl_train_parameter_search_bacc = "CL_tissue_class_BACC_training",
+      ps_patient_train_recon_nlogloss = "P_reconstruction_training",
+      ps_cl_train_recon_nlogloss = "CL_reconstruction_training",
+      
+      dr_cl_test_parameter_search_R2_Q90 = "CL_DR_R2_Q90_validation",
+      ps_patient_test_surv_c = "P_SURV_C_validation",
+      ps_batch_prediction_rfc_auc = "batch_RFC_BACC_validation",
+      tissue_class_cl_test_parameter_search_bacc = "CL_tissue_class_BACC_validation",
+      ps_patient_test_recon_nlogloss = "P_reconstruction_validation",
+      ps_cl_test_recon_nlogloss = "CL_reconstruction_validation",
+      
+      dr_cl_test_R2_Q90 = "CL_DR_R2_Q90_testing",
+      patient_test_surv_c = "P_SURV_C_testing",
+      batch_prediction_rfc_bacc = "batch_RFC_BACC_testing",
+      tissue_class_cl_test_bacc = "CL_tissue_class_BACC_testing",
+      patient_test_recon_nlogloss = "P_reconstruction_testing",
+      cl_test_recon_nlogloss = "CL_reconstruction_testing"
+    )
+    # Prettified table for manuscript supplement
+    cols <- c(relevant_parameters, names(objective_rename_map))
+    if (length(setdiff(cols, colnames(pp_table))) > 0) {
+      warning(paste("Missing cols: ", setdiff(cols, colnames(pp_table)), collapse=", "))
+      cols <- intersect(cols, colnames(pp_table))
+    }
+    params_perf <- pp_table[,cols]
+    colnames(params_perf) <- ifelse(
+      colnames(params_perf) %in% names(objective_rename_map),
+      objective_rename_map[colnames(params_perf)],
+      colnames(params_perf)
+    )
+    readr::write_csv(params_perf, paste0(save_path, "hyper_parameter_search_results.csv"))
+    # Rough table for python scripts
+    write.csv(pp_table[, relevant_parameters[relevant_parameters %in% colnames(pp_table)]], paste0(save_path, "objective_x.csv"))
     write.csv(pp_table[, c(objectives, "weighted_objective")], paste0(save_path, "objective_y.csv"))
     write.csv(pp_table[, c(ps_objectives, "ps_weighted_objective")], paste0(save_path, "ps_objective_y.csv"))
     
@@ -527,17 +565,12 @@ for (save_dir in save_dirs) {
     # Parameter search test set performance
     # (prefix, postfix, sign, set indicator)
     performance_criteria <- list(
-      list("patient_", "_recon_nlogloss", 0, TRUE), # 0.25, TRUE), 
-      list("cl_", "_recon_nlogloss", 0, TRUE), # 0.25, TRUE),
+      list("patient_", "_recon_nlogloss", 0, TRUE),
+      list("cl_", "_recon_nlogloss", 0, TRUE),
       list("patient_", "_surv_c", 1, TRUE),
-      list("dr_cl_", "_R2_Q90", 1, TRUE), 
-      #list("dr_cl_", "_R2_mean", 1, TRUE), 
+      list("dr_cl_", "_R2_Q90", 1, TRUE),
       list("tissue_class_cl_", "_bacc", 1, TRUE), 
-      #list("batch_prediction_svm_auc", "", -1, FALSE), 
-      #list("batch_prediction_rfc_auc", "", -1, FALSE))#-1, FALSE))
-      list("batch_prediction_rfc_bacc", "", -1, FALSE))#-1, FALSE))
-      #list("batch_prediction_svm_auc", "", -0.5, FALSE))#-1, FALSE))
-      #list("combined_", "_batch_dsc", -1))
+      list("batch_prediction_rfc_bacc", "", -1, FALSE))
     ps_col_ind <- grep("^ps_|_parameter_search_", colnames(metrics_table_full))
     metrics_list_copy <- list()
     metrics_list_copy[["ps"]] <- metrics_table_full[,ps_col_ind]
@@ -1119,7 +1152,7 @@ for (save_dir in save_dirs) {
         facet_wrap(. ~ loss_name, scales = "free_y")
       
       temp_par <- reshape2::melt(
-        pp_table[,c("task", pp_relevant[pp_relevant %in% colnames(pp_table)])], 
+        pp_table[,c("task", relevant_parameters[relevant_parameters %in% colnames(pp_table)])], 
         id.vars = c("task"), 
         variable.name = c("par_name"), 
         value.name = c("par_value")
