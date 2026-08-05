@@ -658,6 +658,114 @@ def get_xia_ctrp_data(
     
     return xia_data_dict
 
+#%% Alternative drug-sensitivity
+def get_xia_ctrp_data_combat(
+        data_root = './', 
+        tissue_classifier = False, 
+        include_metas_labels = False, 
+        exclude_metas_data = False,
+        debug = False):
+    patient_expression_root_dir = os.path.join(data_root, 'tcga/')
+    cell_line_expression_root_dir = os.path.join(data_root, 'ccle/')
+    cell_line_drug_response_root_dir = os.path.join(data_root, 'drug_sensitivity_xia/')
+    
+    patient_expression_cancer_list = 'ACC,BLCA,BRCA,CESC,CHOL,COAD,DLBC,ESCA,GBM,HNSC,KICH,KIRC,KIRP,LGG,LIHC,LUAD,LUSC,MESO,OV,PAAD,PCPG,PRAD,READ,SARC,SKCM,STAD,TGCT,THCA,THYM,UCEC,UCS,UVM'
+    patient_expression_cancer_list = patient_expression_cancer_list.split(sep = ',')
+    
+    if tissue_classifier:
+        patient_class_file = 'oncotree_level1.csv'
+        cell_line_class_file = 'oncotree_level1.csv'
+        patient_class_col = 'level_1'
+        if include_metas_labels:
+            cell_line_class_col = 'level_1'
+        else:
+            cell_line_class_col = 'primary_level_1'
+    else:
+        patient_class_file = None
+        cell_line_class_file = None
+        patient_class_col = None
+        cell_line_class_col = None
+    
+    if exclude_metas_data:
+        cl_filter_file = 'Model_augmented.csv'
+        cl_filter_column = 'solid_primary'
+        cl_filter_include = ['solid_primary']
+    else:
+        cl_filter_file = 'Model_augmented.csv'
+        cl_filter_column = 'solid'
+        cl_filter_include = ['solid']
+    
+    xia_data_dict = complete_data_loader(
+        patient_expression_root_dir = patient_expression_root_dir,
+        patient_expression_cancer_list = patient_expression_cancer_list,
+        patient_expression_file = 'mrna.csv.gz',
+        patient_expression_sample_file = 'sample_info.csv.gz', 
+        patient_gene_mapping_file = 'TCGA_gene_mapping.csv', 
+        patient_expression_log2 = True, 
+        patient_expression_mean_cut = 1., 
+        patient_class_file = patient_class_file, 
+        patient_class_col = patient_class_col, 
+        patient_survival_file = 'survival.csv.gz', 
+        patient_survival_event_col = 'OS', 
+        patient_survival_time_col = 'OS.time', 
+        patient_survival_covar_cols = ['gender','age_at_initial_pathologic_diagnosis','type'],
+        patient_survival_covar_onehot = [True, False, True], 
+        cell_line_expression_root_dir = cell_line_expression_root_dir,
+        cell_line_expression_file = 'CCLE_expression.csv',
+        cell_line_gene_mapping_file = 'CCLE_gene_mapping.csv', 
+        cell_line_expression_log2 = False, 
+        cell_line_expression_mean_cut = 1., 
+        gene_harmonization_union = False, 
+        cell_line_class_file = cell_line_class_file, 
+        cell_line_class_col = cell_line_class_col, 
+        cell_line_drug_response_root_dir = cell_line_drug_response_root_dir,
+        cell_line_drug_response_file = 'xia_ctrp_screen_dss.csv.gz',
+        cell_line_drug_response_row_info_file = 'xia_ctrp_screen_info.csv.gz', 
+        cell_line_drug_response_row_info_sample_col = 'CELL', 
+        cell_line_drug_response_row_info_treat_col = 'DRUG',
+        cell_line_drug_response_row_map_file = 'xia_id_ccle_clid_map.csv.gz',
+        cell_line_drug_response_row_map_column = 'depmap_id', 
+        cell_line_drug_response_target_column = 'DSS1',
+        cell_line_drug_response_maxscale = False, 
+        cell_line_filter_mapping_file = cl_filter_file, 
+        cell_line_filter_mapping_column = cl_filter_column, 
+        cell_line_filter_inclusion_list = cl_filter_include)
+
+    batch_correction_dir = os.path.join(data_root, 'batch_corrected/')
+    fn = os.path.join(batch_correction_dir, 'ComBat.csv.gz')
+    corrected_gex = pd.read_csv(fn, index_col=0)
+    if debug:
+        original_genes = xia_data_dict.get('gene_ids')
+        combat_genes = corrected_gex.columns.to_numpy()
+        corrected_combat_genes = [i.replace('.', '-') for i in combat_genes]
+        if not np.all(original_genes == corrected_combat_genes):
+            print('ComBat genes do not match original data.')
+            print(np.unique(original_genes == combat_genes, return_counts=True))
+            print(np.setdiff1d(original_genes, corrected_combat_genes))
+            print(np.setdiff1d(corrected_combat_genes, original_genes))
+
+    xia_data_dict['patient_exp'] = corrected_gex.loc[xia_data_dict['patient_rows']].to_numpy()
+    if np.logical_not(xia_data_dict['cl_class_mask']).any():
+        cl_mask_counts = np.unique(
+            xia_data_dict['cl_class_mask'],
+            return_counts=True
+        )
+        if debug:
+            combat_cl_ids = np.setdiff1d(corrected_gex.index.to_numpy(), xia_data_dict['patient_rows'])
+            if xia_data_dict['cl_exp_rows'].shape[0] != combat_cl_ids.shape[0]:
+                print('ComBat CL data size mismatch')
+            print(f'CL class mask counts: {cl_mask_counts}')
+        xia_data_dict['cl_exp'] = xia_data_dict['cl_exp'][xia_data_dict['cl_class_mask']]
+        xia_data_dict['cl_exp_rows'] = xia_data_dict['cl_exp_rows'][xia_data_dict['cl_class_mask']]
+        xia_data_dict['dr_table'] = xia_data_dict['dr_table'][xia_data_dict['cl_class_mask']]
+        xia_data_dict['dr_table_mask'] = xia_data_dict['dr_table_mask'][xia_data_dict['cl_class_mask']]
+        if tissue_classifier:
+            xia_data_dict['cl_class'] = xia_data_dict['cl_class'][xia_data_dict['cl_class_mask']]
+            xia_data_dict['cl_class_mask'] = xia_data_dict['cl_class_mask'][xia_data_dict['cl_class_mask']]
+    xia_data_dict['cl_exp'] = corrected_gex.loc[xia_data_dict['cl_exp_rows']].to_numpy()
+
+    return xia_data_dict
+
 #%% CTRDB 
 import os, json
 def get_ctrdb(
