@@ -240,11 +240,12 @@ if tissue_classifier:
     class_map_df = pd.DataFrame(data_dict['class_map'].items(), columns = ['name', 'key'])
     class_map_df.to_csv(os.path.join(res_path, 'external_evaluation/class_map.csv'))
     
-
 search_kwargs['data_dict'] = data_dict
-
-
 survival_time_standardize = False
+
+#%% Prints
+print(f"{data_dict['dr_table_mask'].sum()} drug-cl pairs.")
+print(f"{data_dict['dr_table_mask'].any(axis=1).sum()} cl with at least 1 drug.")
 
 #%% Serialization
 from modae.data_utilities import JSONFeatureSpecDecoder
