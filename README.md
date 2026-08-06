@@ -1,18 +1,18 @@
 # MODAE experiments
 
-## Step 1 setup files and environment (TODO: update URLs when published)
+## Step 1 setup files and environment
 
 ```
-git clone https://github.com/trintala/MODAEplus.git
-git clone https://github.com/trintala/MODAEplus_experiments.git
+git clone https://github.com/UEFBiomedicalInformaticsLab/MODAEplus.git
+git clone https://github.com/UEFBiomedicalInformaticsLab/MODAEplus_experiments.git
 ```
 
-Download data from Zenodo (not uploaded at the moment, found in group folder).
+Download data from https://doi.org/10.5281/zenodo.21808125.
 
 Note that the scripts require environmental variables that define paths to 
 data, scripts, and output. To keep the code portable and updateable, it is 
 recommended to use these variables instead of editing the scripts directly. 
-They can be setup like this:
+Bash example:
 
 ```
 export MODAE_DATA_PATH=$HOME/MODAE_data/
@@ -26,9 +26,12 @@ export MODAE_OUTPUT_PATH=$HOME/MODAE_output/
 cd MODAEplus_experiments/container
 sudo apptainer build modae.sif modae.def
 ```
-The image can also be found on Zenodo (group folder).
+The image can also be found on Zenodo (TODO: upload final image).
 
 ## Step 3 SLURM config
+
+The hyper-parameter tuning has been set up to run using the SLURM scheduler on a HPC.
+It is possible to run without it, but that will require some modifications.
 
 Check that files in slurm are configured appropriately, adjust 
 image, data, script, and output paths as necessary. The paths 
@@ -49,10 +52,10 @@ A setup script must be run to process the data:
 A SLURM array job can be used to run multiple iterations of random search: 
 [rs.sbatch](slurm/hyperparameter_tuning/tcga_modae_rs_20250410.sbatch)
 * For each run it generates new random hyper-parameter settings.
-* It runs CV once with 3-to-1 train-test for the parameter search and once with
-  (3+1)-to-1 train-test for the testing. This corresponds to CV with a nested train-test
-  split for hyper-parameter selection. 
-* The CV is run using multiprocessing and can share one GPU between multiple processes.
+* It runs CV once with 3-to-1 train-test for the hyper-parameter search and once with
+  (3+1)-to-1 train-test for evaluation. This corresponds to CV with a nested train-test
+  split for hyper-parameter selection.
+* CV is run using multiprocessing and can share one GPU between multiple processes.
 * The model is relatively small and often CPU-based training is more cost-effective. 
 
 ## Step 5 run additional hyper-parameter search evaluation
@@ -62,9 +65,10 @@ that haven't been integrated into the main code.
 
 See scripts in [slurm/hyperparameter_evaluation](slurm/hyperparameter_evaluation). 
 
-## Step 6 identify the best setting
+## Step 6 identify the best hyper-parameters
 
-This experimental pipeline uses R to process and visualize MODAE results. 
+The final hyper-parameters for downstream analysis are selected based on outer CV performance.
+This pipeline uses R to process and visualize MODAE results.
 [R/analysis/analyse_results.R](R/analysis/analyse_results.R) calculates summaries 
 of evaluation metrics for all hyper-parameter settings and saves several figures 
 to the output plot path. Adjusting [R/setup.R](R/setup.R) is necessary when 
